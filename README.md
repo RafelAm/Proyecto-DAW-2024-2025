@@ -16,13 +16,13 @@ Este enfoque busca fusionar funcionalidad, estética y entretenimiento, ofrecien
 
  ⚠️ Las tecnologías pueden tener algún que otro cambio.
 
-    Front-End:
+  Front-End:
       - HTML
       - CSS con Sass (posible cambio a TailWind)
       - JavaScript
         El procesador de la informacion que recibe el cliente, me he decidido por JavaScript porque me parece un lenguaje muy interesante y bastante completo.
       
-    Back-End:
+  Back-End:
       - Node.js con Express
         Lo he seleccionado porque me parecia curioso probar un framework en JavaScript y asi tener todo el codigo en un mismo lenguaje,
         dada la información buscada y los cursos que he revisado me ha parecido una buena opción que permite ser escalable sin dar ningun problema
