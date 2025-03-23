@@ -34,6 +34,7 @@ Este enfoque busca fusionar funcionalidad, estética y entretenimiento, ofrecien
         principalmente no se van a guardar masificación de datos, solamente usuarios, puntuaciones y resultados de partidas para luego su procesamiento de estadísticas de juego por usuario.
 
 ## 🔧 Diagrama de Clases y E/R
-![Diagrama en blanco](https://github.com/user-attachments/assets/753f3410-4990-42a5-82a7-114b289fbf88)
+![Diagrama en blanco (2)](https://github.com/user-attachments/assets/b165abb6-de52-4f65-9632-715a63b1c1ce)
+
 
 
