@@ -39,25 +39,26 @@ Este enfoque busca fusionar funcionalidad, estética y entretenimiento, ofrecien
 ## Wireframe
   Puede ser que estos tengan algun cambio en función del contenido y el tamaño de las pantallas.
   ### Ordenador
-   - Home Page
+   #### Home Page
+   
    ![Home-PC](https://github.com/user-attachments/assets/b0dedf66-1e77-4ec2-8760-c3160016f867)
-   - Login - Register
+   #### Login - Register
    ![L-R PC](https://github.com/user-attachments/assets/e4493d65-8075-41ec-9f0f-c122fe7ba54f)
-   - Partida
+   #### Partida
    ![Game-PC](https://github.com/user-attachments/assets/fee866b2-5296-4ec2-858e-3185c7c59dc3)
 
   ### Tablet
-   -Home Page
+   #### Home Page
    ![Home-Tab](https://github.com/user-attachments/assets/4044c21f-dc93-4dfb-afec-40d05022b1db)
-   - Login - Register
+   #### Login - Register
    ![L-R Tab](https://github.com/user-attachments/assets/13919b83-e55b-47d5-84c1-871eebc5b2b5)
-   - Partida
+   #### Partida
    ![Game-Tab](https://github.com/user-attachments/assets/b7f9ce4e-fa13-4a5a-b0db-503624243786)
 
   ### Movil
-   - Home Page
+   #### Home Page
    ![Home-Mv](https://github.com/user-attachments/assets/44445015-ff0b-46cf-9d82-941e922fddc5)
-   - Login - Register
+   #### Login - Register
    ![L-R Mv](https://github.com/user-attachments/assets/0a929d19-1d31-41b3-ada3-178cdcce35ce)
-   - Partida
+   #### Partida
    ![Game-Mv](https://github.com/user-attachments/assets/4c907326-fca5-428e-8a57-45f2c2805cfa)
