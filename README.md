@@ -34,7 +34,9 @@ Este enfoque busca fusionar funcionalidad, estética y entretenimiento, ofrecien
         principalmente no se van a guardar masificación de datos, solamente usuarios, puntuaciones y resultados de partidas para luego su procesamiento de estadísticas de juego por usuario.
 
 ## 🔧 Diagrama de Clases y E/R
-![Diagrama en blanco (2)](https://github.com/user-attachments/assets/b165abb6-de52-4f65-9632-715a63b1c1ce)
+![BlackJack Game UML Model - Server Side](https://github.com/user-attachments/assets/d500a3a7-31a7-4177-a277-74ff05e3f2d5)
+![BlackJack Game UML Database Model](https://github.com/user-attachments/assets/a717175f-31ae-479e-b6de-ec7979f90dfc)
+
 
 ## Wireframe
   Puede ser que estos tengan algun cambio en función del contenido y el tamaño de las pantallas.
