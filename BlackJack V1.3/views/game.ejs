@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/party.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <title>Pruebas</title>
+</head>
+<body>
+    
+    <div class="mesa">
+
+    </div>
+    <button id="addPlayerButton">Añadir Jugador</button>
+    
+</div>
+
+    <!--<h1>Chat</h1>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+        <input id="input" autocomplete="off" />
+        <button>Enviar</button>
+    </form>-->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        // Obtener el ID de la sala desde la URL
+        const roomId = window.location.pathname.split('/').pop();
+        
+        // Variables globales
+        let botonesContainerGlobal = null;
+        let currentUsername = "";
+        let globalBotonesConfig = null;  // Configuración de botones recibida desde el servidor
+        
+        // Unirse a la sala
+        socket.emit('joinRoom', roomId);
+        
+        // Escuchar el estado inicial (y actualizaciones) del juego
+        socket.on('gameState', (gameState) => {
+            // Se espera que el servidor envíe currentUsername en gameState
+            currentUsername = gameState.currentUsername || currentUsername;
+            console.log('Estado del juego recibido:', gameState);
+            
+            renderGame(gameState);
+            addP(gameState);
+        });
+        
+        // Escuchar la configuración de botones enviada por el servidor
+        socket.on('mostrarBotones', (botonesConfig) => {
+            console.log("Configuración de botones recibida:", botonesConfig);
+            globalBotonesConfig = botonesConfig;  // Guardarla de forma global.
+            // Si ya contamos con el contenedor en el DOM, renderizar allí los botones.
+            if (botonesContainerGlobal) {
+                // En este ejemplo, se asume que para el usuario actual se emplea esta configuración.
+                renderizarBotones(botonesConfig, botonesContainerGlobal, false);
+            }
+        });
+        
+        // Función para renderizar el estado del juego
+        function renderGame(gameState) {
+            const mesa = document.querySelector(".mesa");
+            mesa.innerHTML = ""; // Limpiar la mesa
+        
+            // Recorrer cada jugador y crear su “silla”
+            gameState.state.jugadores.forEach((jugador) => {
+                const silla = document.createElement("div");
+                silla.classList.add(jugador.tipo);
+                silla.innerHTML = `
+                    <div class="info">
+                        <p class="name">${jugador.nombre}</p>
+                        <p class="puntos">Puntos: ${jugador.puntaje}</p>
+                    </div>
+                    <div class="cartas"></div>
+                `;
+                
+                // Mostrar las cartas
+                const cartasContainer = silla.querySelector(".cartas");
+                if (cartasContainer && Array.isArray(jugador.cartas)) {
+                    jugador.cartas.forEach((carta) => {
+                        const card = document.createElement("div");
+                        card.classList.add("cards");
+                        card.textContent = carta.Número;
+                        cartasContainer.appendChild(card);
+                    });
+                }
+                
+                // Si el jugador es del tipo "Player" y corresponde al usuario logueado,
+                // se agrega un contenedor para los botones interactivos.
+                if (jugador.tipo === "Player" && jugador.nombre === currentUsername) {
+                    const botonesContainer = document.createElement("div");
+                    botonesContainer.classList.add("botones-container");
+                    // Guardamos el contenedor de botones globalmente para futuras actualizaciones.
+                    botonesContainerGlobal = botonesContainer;
+                    silla.appendChild(botonesContainer);
+                    
+                    // Si el jugador se pasó o se plantó (jugador.plant es true), se deben deshabilitar los botones.
+                    if (jugador.plant === true) {
+                        // Renderizamos la configuración de botones con la opción de deshabilitación.
+                        renderizarBotones(globalBotonesConfig || ["btnPedirCarta", "btnPlantarse"], botonesContainer, true);
+                    } else {
+                        if (globalBotonesConfig) {
+                            renderizarBotones(globalBotonesConfig, botonesContainer, false);
+                        }
+                    }
+                }
+                
+                // Agregar la silla a la mesa
+                mesa.appendChild(silla);
+            });
+        }
+        
+        // Función para renderizar los botones en el contenedor del usuario actual.
+        // Agrega un parámetro (por ejemplo, "deshabilitado") que, de ser true, deshabilita cada botón.
+        function renderizarBotones(botonesConfig, container, deshabilitado = false) {
+            container.innerHTML = ""; // Limpiar el contenedor
+        
+            botonesConfig.forEach(btnId => {
+                const button = document.createElement("button");
+        
+                // Configurar cada botón según el identificador.
+                switch (btnId) {
+                    case "btnPedirCarta":
+                        button.textContent = "Pedir Carta";
+                        button.classList.add("more");
+                        button.addEventListener("click", () => {
+                            socket.emit('requestCard', { roomId });
+                        });
+                        break;
+                    case "btnPlantarse":
+                        button.textContent = "Plantarse";
+                        button.classList.add("plant");
+                        button.addEventListener("click", () => {
+                            socket.emit('plantarse', { roomId });
+                        });
+                        break;
+                    case "btnUnirsePartida":
+                        button.textContent = "Unirse a la partida";
+                        button.classList.add("joinGame");
+                        button.addEventListener("click", () => {
+                            socket.emit('addPlayer', { roomId, username: currentUsername });
+                        });
+                        break;
+                    // Puedes incluir aquí otros casos según tus necesidades.
+                    default:
+                        console.warn("Identificador de botón no reconocido:", btnId);
+                        button.textContent = "Botón desconocido";
+                }
+                
+                // Si el parámetro "deshabilitado" es true, deshabilitar el botón.
+                if (deshabilitado) {
+                    button.setAttribute("disabled", true);
+                }
+                
+                container.appendChild(button);
+            });
+        }
+        
+        // Función para deshabilitar el botón de "Añadir jugador"
+        function disableAdd() {
+            const addP = document.getElementById("addPlayerButton");
+            addP.setAttribute("hidden", true);
+        }
+        
+        // Función para agregar el listener al botón "Añadir jugador"
+        function addP(gameState) {
+            const addPlayerButton = document.getElementById("addPlayerButton");
+            addPlayerButton.addEventListener("click", (e) => {
+                if (currentUsername) {
+                    socket.emit('addPlayer', { roomId, username: currentUsername });
+                    disableAdd();
+                }
+            });
+        }
+        
+        /* --- Otras funcionalidades (por ejemplo, chat) --- */
+        
+        // Escuchar el color enviado desde el servidor
+        socket.on('setBackground', (color) => {
+            document.body.style.backgroundColor = color;
+        });
+        </script>
+        
+      
+      
+
+</body>
+</html>

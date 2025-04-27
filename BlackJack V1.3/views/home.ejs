@@ -1,0 +1,16 @@
+<%- include('partials/header') %>
+    <h1>Home Page Test</h1>
+    <% if(username){ %>
+        <h1>¡Bienvenido <%= username %>!</h1>
+        <form action="/logout" method="POST">
+            <button type="submit" value="">Cerrar Sesion</button>
+        </form>
+        
+    <% }else { %>
+        <a href="/register">Register</a>
+        <a href="/login">Login</a>
+    <% } %>
+    <br>
+    <a href="game/1" target="_blank">Partida 1</a>
+    <a href="game/2" target="_blank">Partida 2</a>
+<%- include('partials/footer.ejs')%>
