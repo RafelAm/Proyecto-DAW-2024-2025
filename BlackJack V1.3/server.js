@@ -45,14 +45,10 @@ io.on('connection', (socket) => {
     // Función para obtener la configuración de botones según el usuario.
     function obtenerBotonesSegunUsuario(usuario) {
         // Si el usuario no está autenticado, se sugieren botones para iniciar sesión o registrarse.
-        /*if (!usuario) {
+        if (!usuario) {
             return ['btnLogin', 'btnRegister'];
-        }*/
-    
-        // Si el usuario es 'admin', se retornan botones especiales para administración.
-        if (usuario === 'admin') {
-            return ['btnDashboard', 'btnCrearPartida', 'btnBorrarPartida', 'btnEditarPerfil'];
         }
+    
     
         // Para cualquier otro usuario autenticado se retornan botones básicos.
         return ['btnPedirCarta', 'btnPlantarse'];
@@ -114,48 +110,80 @@ io.on('connection', (socket) => {
             return socket.emit('error', 'No se encontró el jugador en la partida.');
         }
         
-        game.pedirCarta(playerIndex, game.baraja);
+        game.pedirCarta(playerIndex);
+        if(game.jugadores[playerIndex].puntos > 21) {
+            io.to(roomId).emit('pasado', { playerIndex });
+            game.siguienteTurno();
+        }
         // Enviar el estado actualizado del juego a todos los clientes en la sala.
-        io.to(roomId).emit('gameState', {
-            state: game.toJSON()
+        io.to(roomId).emit('gameState', { 
+            state: game.toJSON(),
+            turnoActual: game.turnoActual // Enviar el índice del jugador en turno
         });
+        
     });
     
-    // Escuchar la acción de plantarse.
-    socket.on('plantarse', ({ roomId }) => {
-        const game = games[roomId];
-        if (!game) return;
-    
-        const username = socket.data.username;
-        const playerIndex = game.jugadores.findIndex(player => player.nombre === username);
-        if (playerIndex === -1) {
-            return socket.emit('error', 'No se encontró tu jugador en la partida.');
-        }
-        game.plantarse(playerIndex);
-        io.to(roomId).emit('gameState', { state: game.toJSON() });
-    
-        // Verificar si todos los jugadores (excluyendo al crupier) se han plantado.
-        const todosPlantados = game.jugadores
-            .filter(jugador => jugador.tipo === "Player")
-            .every(jugador => jugador.plant === true);
-    
-        if (todosPlantados) {
-            io.to(roomId).emit('gameEnd');
-    
-            // Llamamos al método de reinicio (que espera 20 segundos) y luego se emite el nuevo estado.
-            game.reiniciar().then(() => {
-                io.to(roomId).emit('gameState', { state: game.toJSON() });
+// Escuchar la acción de plantarse.
+socket.on('plantarse', ({ roomId }) => {
+    const game = games[roomId];
+    if (!game) return;
+
+    const username = socket.data.username;
+    const playerIndex = game.jugadores.findIndex(player => player.nombre === username);
+    if (playerIndex === -1) {
+        return socket.emit('error', 'No se encontró tu jugador en la partida.');
+    }
+
+    // El jugador se planta.
+    game.plantarse(playerIndex);
+
+    // Verificar si quedan jugadores activos antes de cambiar turno.
+    const quedanJugadores = game.jugadores.some(j => j.tipo === "Player" && !j.plant);
+    if (quedanJugadores) {
+        do {
+            game.turnoActual = (game.turnoActual + 1) % game.jugadores.length;
+        } while (game.jugadores[game.turnoActual].plant || game.jugadores[game.turnoActual].tipo === "Crupier");
+    } else {
+        // Si todos los jugadores se han plantado, el crupier juega.
+        io.to(roomId).emit('gameEnd');
+        game.jugarCrupier();
+    }
+
+    // Emitir el nuevo estado del juego.
+    io.to(roomId).emit('gameState', { 
+        state: game.toJSON(),
+        turnoActual: game.turnoActual // Enviar el índice del jugador en turno.
+    });
+
+    // Verificar si todos los jugadores (excluyendo al crupier) se han plantado.
+    const todosPlantados = game.jugadores
+        .filter(jugador => jugador.tipo === "Player")
+        .every(jugador => jugador.plant);
+
+    if (todosPlantados) {
+        io.to(roomId).emit('gameEnd');
+
+        // Llamamos al método de reinicio (espera 20 segundos) y luego se emite el nuevo estado.
+        game.reiniciar().then(() => {
+            io.to(roomId).emit('gameState', { 
+                state: game.toJSON(),
+                turnoActual: game.turnoActual // Enviar el índice del jugador en turno.
             });
-        }
-    });
+        });
+    }
+});
+
+
     
     socket.on('pasado', ({ roomId, playerIndex }) => {
         const game = games[roomId];
         if (game) {
             game.pasado(playerIndex);
-            io.to(roomId).emit('gameState', {
-                state: game.toJSON()
+            io.to(roomId).emit('gameState', { 
+                state: game.toJSON(),
+                turnoActual: game.turnoActual // Enviar el índice del jugador en turno
             });
+            
         }
     });
     
@@ -163,39 +191,42 @@ io.on('connection', (socket) => {
         const game = games[roomId];
         if (game) {
             game.ganadorPuntuacion();
-            io.to(roomId).emit('gameState', {
-                state: game.toJSON()
+            io.to(roomId).emit('gameState', { 
+                state: game.toJSON(),
+                turnoActual: game.turnoActual // Enviar el índice del jugador en turno
             });
+            
         }
     });
     
     socket.on('addPlayer', ({ roomId }) => {
         const game = games[roomId];
-        const username = socket.handshake.session.username; // Accede a la sesión aquí
+        const username = socket.handshake.session.username;
+        
         if (!game || !username) {
             return socket.emit('error', 'Error al unirse a la partida.');
         }
     
-        // Verificar si el jugador ya está en la partida
         const alreadyInGame = game.jugadores.some(player => player.nombre === username);
         if (alreadyInGame) {
             return socket.emit('error', 'Ya estás en la partida');
         }
     
-        // Agregar al jugador si hay espacio.
         if (game.jugadores.length < 3 && game.empezada === false) {
             const newPlayer = new Jugador(username);
-            game.jugadores.unshift(newPlayer);
-            
-            // Si ya hay al menos dos jugadores, se marca la partida como empezada
+            game.jugadores.unshift(newPlayer); // Agregar nuevo jugador al inicio
+    
+            // Si es el primer jugador añadido, aseguramos que `turnoActual` sea 0
+            game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player");
+    
             if (game.jugadores.length > 1) {
                 game.empezada = true;
-                // Llamar a la función para repartir las cartas a todos los jugadores
                 game.repartirCartas();
             }
-            // Enviar el estado actualizado del juego a todos los clientes en la sala.
+    
             io.to(roomId).emit('gameState', {
-                state: game.toJSON()
+                state: game.toJSON(),
+                turnoActual: game.turnoActual
             });
         } else {
             socket.emit('error', 'La partida está llena.');
@@ -203,6 +234,74 @@ io.on('connection', (socket) => {
     });
     
     
+    socket.on('finalRound', ({ roomId }) => {
+        const game = games[roomId];
+        if (!game) return;
+    
+        // Verificar si todos los jugadores de tipo "Player" están plantados
+        const todosPlantados = game.jugadores
+            .filter(jugador => jugador.tipo === "Player")
+            .every(jugador => jugador.plant === true);
+    
+        if (!todosPlantados) {
+            return socket.emit('error', 'No todos los jugadores han finalizado su turno.');
+        }
+    
+        // Distribuir premios con base en las reglas definidas
+        game.distribuirPremios();
+    
+        // Emitir el estado actualizado del juego (balances, puntajes, etc.)
+        io.to(roomId).emit('gameState', { 
+            state: game.toJSON(),
+            turnoActual: game.turnoActual // Enviar el índice del jugador en turno
+        });
+        
+    
+        // Notificar el final de la ronda
+        io.to(roomId).emit('gameEnd');
+    
+        // Reiniciar la partida (puedes incluir un delay aquí si lo deseas)
+        game.reiniciar().then(() => {
+            io.to(roomId).emit('gameState', { 
+                state: game.toJSON(),
+                turnoActual: game.turnoActual // Enviar el índice del jugador en turno
+            });
+            
+    
+            // Emitir evento para mostrar el formulario de apuestas en el cliente
+            io.to(roomId).emit('mostrarFormularioApuesta');
+        });
+    });
+    
+    
+    socket.on('realizarApuesta', ({ roomId, monto }) => {
+        const game = games[roomId];
+        if (!game) return socket.emit('error', 'Partida no encontrada.');
+    
+        const username = socket.data.username;
+        const playerIndex = game.jugadores.findIndex(player => player.nombre === username);
+        if (playerIndex === -1) {
+            return socket.emit('error', 'Jugador no encontrado.');
+        }
+    
+        try {
+            game.realizarApuesta(playerIndex, monto);
+            socket.emit('apuestaRealizada', { balance: game.jugadores[playerIndex].balance });
+    
+            // Enviar el estado actualizado solo **una vez**
+            io.to(roomId).emit('gameState', { 
+                state: game.toJSON(),
+                turnoActual: game.turnoActual // Enviar el índice del jugador en turno
+            });
+            
+    
+        } catch (err) {
+            socket.emit('error', { message: err.message });
+        }
+    });
+    
+
+
     socket.on('disconnect', () => {
         console.log('Usuario desconectado:', socket.handshake.session.username);
     
@@ -220,7 +319,11 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('playerDisconnected', { username });
     
         // Enviar el estado actualizado del juego.
-        io.to(roomId).emit('gameState', { state: game.toJSON() });
+        io.to(roomId).emit('gameState', { 
+            state: game.toJSON(),
+            turnoActual: game.turnoActual // Enviar el índice del jugador en turno
+        });
+        
     });
     
     // Manejo de mensajes de chat.
@@ -248,11 +351,21 @@ app.get("/", (req,res)=>{
 })
 
 
-// Testing
-app.get("/game/:id",(req,res)=>{
-    const username = req.session.username;
-    res.render("game", {username})
-})
+// Middleware para verificar si el usuario está autenticado.
+function checkAuth(req, res, next) {
+    if (!req.session.username) {
+        req.session.returnTo = req.originalUrl;  // Guardar la URL original
+        return res.redirect("/login");
+    }
+    next();
+}
+
+  
+  // Ruta protegida usando el middleware.
+  app.get("/game/:id", checkAuth, (req, res) => {
+    res.render("game", { username: req.session.username });
+  });
+  
 
 
 // Página para el registro de usuarios
@@ -292,31 +405,40 @@ app.post('/login', (req, res) => {
 
     const query = 'SELECT username, password FROM users WHERE username = ? AND password = ?';
 
-
     db.query(query, [username, password], (err, result) => {
         if (err) {
-            console.error('Error al encontar el usuario:', err);
+            console.error('Error al encontrar el usuario:', err);
             return res.status(500).send('Error al encontrar el usuario');
         }
-        if(result.length > 0){
+
+        if (result.length > 0) {
             req.session.username = username;
-            res.redirect("/")
-        }else{
+
+            // Redirigir al usuario a la partida si tenía una URL guardada
+            const redirectTo = req.session.returnTo || "/";
+            delete req.session.returnTo;  // Eliminar la variable de sesión para evitar errores futuros
+            
+            return res.redirect(redirectTo);
+        } else {
             res.status(401).send('Usuario o contraseña incorrectos');
         }
-        
     });
 });
 
-// Post para cerrar sesion del usuario
-app.post('/logout' , (req,res)=>{
-    req.session.destroy(err => {
-        console.log(err);
-    })
-    res.clearCookie('connect.sid')
-    res.redirect('/')
-})
 
+// Post para cerrar sesion del usuario
+app.post('/logout', checkAuth, (req, res) => {
+    req.session.destroy(err => {
+      if (err) {
+        console.error("Error al destruir la sesión:", err);
+        // Puedes manejar el error con una respuesta u otra redirección aquí
+        return res.redirect('/');
+      }
+      res.clearCookie('connect.sid');
+      res.redirect('/');
+    });
+  });
+  
 
 server.listen(3000)
 console.log(app.get('appName') + " http://localhost:3000")
