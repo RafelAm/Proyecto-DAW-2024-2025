@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')))
 const colors = ['red', 'blue', 'green', 'yellow'];
 const games = {};
 const roomColors = {};
-
+const MAX_JUGADORES = 4;
 
 const sessionMiddleware = session({
     secret: 'session-secret-secure', // Clave secreta para firmar la cookie de sesión
@@ -202,21 +202,16 @@ socket.on('plantarse', ({ roomId }) => {
     socket.on('addPlayer', ({ roomId }) => {
         const game = games[roomId];
         const username = socket.handshake.session.username;
-        
-        if (!game || !username) {
-            return socket.emit('error', 'Error al unirse a la partida.');
-        }
     
-        const alreadyInGame = game.jugadores.some(player => player.nombre === username);
-        if (alreadyInGame) {
+        if (!game || !username) return socket.emit('error', 'Error al unirse a la partida.');
+    
+        if (game.jugadores.some(player => player.nombre === username)) {
             return socket.emit('error', 'Ya estás en la partida');
         }
     
-        if (game.jugadores.length < 3 && game.empezada === false) {
+        if (game.jugadores.length < MAX_JUGADORES && !game.empezada) {
             const newPlayer = new Jugador(username);
-            game.jugadores.unshift(newPlayer); // Agregar nuevo jugador al inicio
-    
-            // Si es el primer jugador añadido, aseguramos que `turnoActual` sea 0
+            game.jugadores.unshift(newPlayer);
             game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player");
     
             if (game.jugadores.length > 1) {
@@ -224,14 +219,12 @@ socket.on('plantarse', ({ roomId }) => {
                 game.repartirCartas();
             }
     
-            io.to(roomId).emit('gameState', {
-                state: game.toJSON(),
-                turnoActual: game.turnoActual
-            });
+            io.to(roomId).emit('gameState', { state: game.toJSON(), turnoActual: game.turnoActual });
         } else {
             socket.emit('error', 'La partida está llena.');
         }
     });
+    
     
     
     socket.on('finalRound', ({ roomId }) => {

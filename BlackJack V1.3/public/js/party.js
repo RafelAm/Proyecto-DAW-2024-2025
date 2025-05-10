@@ -35,8 +35,8 @@ export class Jugador extends Participante {
         this.id = Math.floor(Math.random() * 100000);
         this.nombre = nombre;
         this.tipo = "Player";   
-        this.balance = 1000; // Capital inicial para el jugador.
-        this.apuesta = 0;    // Apuesta actual (iniciada en 0).
+        this.balance = 1000;
+        this.apuesta = 0;
     }
 }
 
@@ -142,7 +142,7 @@ export class Partida {
                 empezada: this.empezada,
                 ganadores: "",
                 reiniciada: true,
-                totalApuestas: 0, // Reiniciamos la apuesta total aquí
+                totalApuestas: 0,
                 turnoActual: 0
             };
         } else {
@@ -263,17 +263,6 @@ export class Partida {
         }
         return ganadores;
     }
-
-    /*
-      Método que compara cada jugador (tipo "Player") contra el crupier y
-      distribuye los premios según las reglas:
-      
-      - Si el jugador se pasa (>21): pierde su apuesta.
-      - Si el crupier se pasa y el jugador no: gana, recibe 2x la apuesta.
-      - Si el jugador tiene mayor puntaje que el crupier sin pasarse: gana.
-      - Si empata con el crupier: se devuelve la apuesta.
-      - Si el jugador tiene un puntaje menor: pierde la apuesta.
-    */
       distribuirPremios() {
         const posCrupier = this.jugadores.findIndex(j => j.tipo === "Crupier");
         const crupier = this.jugadores[posCrupier];
@@ -302,9 +291,7 @@ export class Partida {
     
             jugador.apuesta = 0;
         });
-    
-        // Si el crupier gana, reiniciamos la apuesta total a 0.
-        if (crupierGana) {
+            if (crupierGana) {
             console.log("El crupier gana, todas las apuestas se reinician.");
             this.totalApuestas = 0;
         }
@@ -315,10 +302,7 @@ export class Partida {
         this.comprobarTotalCartas(i);
     }
 
-    
-
-     // Reinicia la partida (conservando información como el balance de cada jugador)
-     async reiniciar() {
+         async reiniciar() {
         console.log("Esperando 20 segundos para reiniciar...");
         await new Promise(resolve => setTimeout(resolve, 20000));
     
@@ -338,16 +322,10 @@ export class Partida {
         this.plantados = 0;
         this.empezada = false;
         this.reiniciada = true;
-        this.totalApuestas = 0; // Aseguramos que el total se reinicie.
+        this.totalApuestas = 0; 
     }
     
-    
 
-    /**
-     * Coloca la apuesta de un jugador.
-     * @param {number} indexJugador - Índice del jugador en el array.
-     * @param {number} monto - La cantidad que desea apostar.
-     */
     realizarApuesta(indexJugador, monto) {
         const jugador = this.jugadores[indexJugador];
         if (monto > jugador.balance) {
@@ -355,7 +333,7 @@ export class Partida {
         }
         jugador.apuesta = monto;
         jugador.balance -= monto;
-        this.totalApuestas += monto; // Sumamos al total.
+        this.totalApuestas += monto; 
     }
     
 }

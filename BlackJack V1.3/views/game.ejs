@@ -98,27 +98,19 @@
             renderizarFormularioApuesta();
         });
 
-        function renderizarFormularioApuesta() {
-    let apuestaContainer = document.getElementById("apuestaContainer");
-    if (!apuestaContainer) {
-        apuestaContainer = document.createElement("div");
-        apuestaContainer.id = "apuestaContainer";
-        apuestaContainer.innerHTML = `
-            <form id="betForm">
-                <input type="number" id="betAmount" placeholder="Ingrese su apuesta" required>
-                <button type="submit">Apostar</button>
-            </form>
-        `;
-        document.body.appendChild(apuestaContainer);
-    } else {
-        apuestaContainer.style.display = "block";
-    }
-
-    // **Evitar múltiples eventos** eliminando el anterior antes de añadirlo
-    const betForm = document.getElementById("betForm");
-    betForm.removeEventListener("submit", handleBetSubmit);
-    betForm.addEventListener("submit", handleBetSubmit);
-    }
+function renderizarFormularioApuesta() {
+    let apuestaContainer = document.getElementById("apuestaContainer") || document.createElement("div");
+    apuestaContainer.id = "apuestaContainer";
+    apuestaContainer.innerHTML = `
+        <form id="betForm">
+            <input type="number" id="betAmount" placeholder="Ingrese su apuesta" required>
+            <button type="submit">Apostar</button>
+        </form>
+    `;
+    document.body.appendChild(apuestaContainer);
+    
+    document.getElementById("betForm").addEventListener("submit", handleBetSubmit, { once: true });
+}
 
     function handleBetSubmit(e) {
         e.preventDefault();
