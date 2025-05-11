@@ -93,8 +93,8 @@ io.on('connection', (socket) => {
         // Enviar el estado inicial del juego junto con el usuario actual.
         socket.emit('gameState', { 
             state: game.toJSON(),
-            currentUsername: usuario // 'usuario' extraído de la sesión de handshake
-            
+            currentUsername: usuario, // 'usuario' extraído de la sesión de handshake
+            turnoActual: game.turnoActual 
         });
     });
     
@@ -109,7 +109,8 @@ io.on('connection', (socket) => {
         if (playerIndex === -1) {
             return socket.emit('error', 'No se encontró el jugador en la partida.');
         }
-        
+        if (game.turnoActual !== playerIndex) return socket.emit('error', 'No es tu turno.');
+
         game.pedirCarta(playerIndex);
         if(game.jugadores[playerIndex].puntos > 21) {
             io.to(roomId).emit('pasado', { playerIndex });
@@ -146,7 +147,7 @@ socket.on('plantarse', ({ roomId }) => {
     } else {
         // Si todos los jugadores se han plantado, el crupier juega.
         io.to(roomId).emit('gameEnd');
-        game.jugarCrupier();
+        game.jugarCrupier(playerIndex);
     }
 
     // Emitir el nuevo estado del juego.

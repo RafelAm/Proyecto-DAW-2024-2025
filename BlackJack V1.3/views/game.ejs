@@ -37,7 +37,7 @@
         // Unirse a la sala
         socket.emit('joinRoom', roomId);
         
-        socket.on('gameState', (gameState) => {
+    socket.on('gameState', (gameState) => {
     currentUsername = gameState.currentUsername || currentUsername;
     console.log('Estado del juego recibido:', gameState);
 
@@ -66,10 +66,6 @@
 
     // Determinar si el usuario es el jugador en turno
     const esMiTurno = jugadorEnTurno.nombre === currentUsername;
-
-    // Bloquear los botones para todos los jugadores primero
-    document.getElementById('btnPedirCarta').disabled = true;
-    document.getElementById('btnPlantarse').disabled = true;
 
     // Solo habilitar los botones para el jugador en turno
     if (esMiTurno && !jugadorEnTurno.plant) {
