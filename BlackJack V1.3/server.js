@@ -97,11 +97,24 @@ io.on('connection', (socket) => {
             turnoActual: game.turnoActual 
         });
     });
+
+    socket.on('gameStateRequest', ({ roomId }) => {
+        const game = games[roomId];
+        if (!game) return socket.emit('error', 'Partida no encontrada.');
+    
+        if (game.reiniciando) {
+            return socket.emit('error', 'La partida está reiniciándose, espera unos segundos.');
+        }
+    
+        socket.emit('gameState', { state: game.toJSON(), turnoActual: game.turnoActual });
+    });
+    
+
     
     // Escuchar la acción de pedir carta.
     socket.on('requestCard', ({ roomId }) => {
         const game = games[roomId];
-        if (!game) return;
+        if (!game || game.reiniciando) return socket.emit('error', 'La partida está en proceso de reinicio.');
         
         const username = socket.data.username;  // Recupera el usuario autenticado.
         // Buscar el índice del jugador en la partida usando el nombre de usuario.
@@ -109,12 +122,18 @@ io.on('connection', (socket) => {
         if (playerIndex === -1) {
             return socket.emit('error', 'No se encontró el jugador en la partida.');
         }
-        if (game.turnoActual !== playerIndex) return socket.emit('error', 'No es tu turno.');
-
         game.pedirCarta(playerIndex);
         if(game.jugadores[playerIndex].puntos > 21) {
             io.to(roomId).emit('pasado', { playerIndex });
             game.siguienteTurno();
+        }
+
+        const quedanJugadores = game.jugadores.some(j => j.tipo === "Player" && !j.plant);
+        if (quedanJugadores) {
+            game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
+        } else {
+            io.to(roomId).emit('gameEnd');
+            game.jugarCrupier(playerIndex);
         }
         // Enviar el estado actualizado del juego a todos los clientes en la sala.
         io.to(roomId).emit('gameState', { 
@@ -141,11 +160,10 @@ socket.on('plantarse', ({ roomId }) => {
     // Verificar si quedan jugadores activos antes de cambiar turno.
     const quedanJugadores = game.jugadores.some(j => j.tipo === "Player" && !j.plant);
     if (quedanJugadores) {
-        do {
-            game.turnoActual = (game.turnoActual + 1) % game.jugadores.length;
-        } while (game.jugadores[game.turnoActual].plant || game.jugadores[game.turnoActual].tipo === "Crupier");
+        // Encontrar el siguiente jugador activo
+        game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
     } else {
-        // Si todos los jugadores se han plantado, el crupier juega.
+        // Si todos los jugadores se han plantado, el crupier juega
         io.to(roomId).emit('gameEnd');
         game.jugarCrupier(playerIndex);
     }
@@ -240,7 +258,7 @@ socket.on('plantarse', ({ roomId }) => {
         if (!todosPlantados) {
             return socket.emit('error', 'No todos los jugadores han finalizado su turno.');
         }
-    
+
         // Distribuir premios con base en las reglas definidas
         game.distribuirPremios();
     
@@ -254,17 +272,19 @@ socket.on('plantarse', ({ roomId }) => {
         // Notificar el final de la ronda
         io.to(roomId).emit('gameEnd');
     
-        // Reiniciar la partida (puedes incluir un delay aquí si lo deseas)
-        game.reiniciar().then(() => {
-            io.to(roomId).emit('gameState', { 
-                state: game.toJSON(),
-                turnoActual: game.turnoActual // Enviar el índice del jugador en turno
-            });
-            
+        try {
+            game.reiniciar();  // ✅ Esperamos que termine la reinicialización
     
-            // Emitir evento para mostrar el formulario de apuestas en el cliente
+            io.to(roomId).emit('gameState', { 
+                state: game.toJSON(), 
+                turnoActual: game.turnoActual 
+            });
+    
             io.to(roomId).emit('mostrarFormularioApuesta');
-        });
+        } catch (error) {
+            console.error("Error al reiniciar la partida:", error);
+            socket.emit('error', 'Hubo un problema al reiniciar la partida.');
+        }
     });
     
     

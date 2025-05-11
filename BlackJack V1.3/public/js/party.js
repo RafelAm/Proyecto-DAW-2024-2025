@@ -83,23 +83,45 @@ export class Partida {
         this.jugadores = jugadores;
         this.empezada = false;
         this.reiniciada = false;
+        this.reiniciando = false;
         this.totalApuestas = 0;
         this.turnoActual = 0;
     }
 
-    async iniciarNuevoJuego() {
-        await this.reiniciar();
-        console.log("¡Partida reiniciada con éxito!");
+    iniciarNuevoJuego() {
+        if (this.reiniciando) return; // 🔒 Evita doble reinicio
+        this.reiniciando = true;
+        console.log("Esperando 20 segundos para reiniciar...");
+
+        setTimeout(() => {
+            console.log("Reiniciando partida...");
+            this.jugadores.forEach(player => {
+                player.puntaje = 0;
+                player.cartas = [];
+                player.plant = false;
+                player.apuesta = 0;
+            });
+
+            this.baraja = new Baraja();
+            this.plantados = 0;
+            this.empezada = false;
+            this.reiniciada = true;
+            this.totalApuestas = 0;
+            this.turnoActual = 0;
+
+            this.reiniciando = false;  // ✅ Finaliza el proceso
+        }, 20000);
     }
+    
     
 
 
     siguienteTurno() {
-        do {
-            this.turnoActual = (this.turnoActual + 1) % this.jugadores.length;
-        } while (this.jugadores[this.turnoActual].plant || this.jugadores[this.turnoActual].tipo === "Crupier");
+        this.turnoActual = this.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
     
-        this.verificarSiCrupierDebeJugar();
+        if (this.turnoActual === -1) {
+            this.verificarSiCrupierDebeJugar();
+        }
     }
     
     
@@ -302,29 +324,31 @@ export class Partida {
         this.comprobarTotalCartas(i);
     }
 
-         async reiniciar() {
-        console.log("Esperando 20 segundos para reiniciar...");
-        await new Promise(resolve => setTimeout(resolve, 20000));
-    
+    async reiniciar() {
         console.log("Reiniciando partida...");
-        
-        this.jugadores = this.jugadores.map(player => ({
-            nombre: player.nombre,
-            tipo: player.tipo,
-            puntaje: 0,
-            cartas: [],
-            plant: false,
-            balance: player.balance,
-            apuesta: 0
-        }));
-    
-        this.baraja = new Baraja();
-        this.plantados = 0;
-        this.empezada = false;
-        this.reiniciada = true;
-        this.totalApuestas = 0; 
+        await new Promise(resolve => setTimeout(resolve, 20000));
+            const crupier = this.jugadores.find(j => j.tipo === "Crupier");
+            if (crupier) {
+                crupier.cartas = [];
+                crupier.puntaje = 0;
+            }
+
+            this.jugadores.forEach(player => {
+                player.puntaje = 0;
+                player.cartas = [];
+                player.plant = false;
+                if(player.tipo === "Player") {
+                    player.apuesta = 0;
+                }
+                
+            });
+            this.baraja = new Baraja();
+            this.plantados = 0;
+            this.empezada = false;
+            this.reiniciada = true;
+            this.totalApuestas = 0;
     }
-    
+        
 
     realizarApuesta(indexJugador, monto) {
         const jugador = this.jugadores[indexJugador];

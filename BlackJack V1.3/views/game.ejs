@@ -68,10 +68,9 @@
     const esMiTurno = jugadorEnTurno.nombre === currentUsername;
 
     // Solo habilitar los botones para el jugador en turno
-    if (esMiTurno && !jugadorEnTurno.plant) {
-        document.getElementById('btnPedirCarta').disabled = false;
-        document.getElementById('btnPlantarse').disabled = false;
-    }
+    document.getElementById('btnPedirCarta').disabled = !esMiTurno || jugadorEnTurno.plant;
+    document.getElementById('btnPlantarse').disabled = !esMiTurno || jugadorEnTurno.plant;
+    document.getElementById('betForm').style.display = esMiTurno ? 'block' : 'none';
 });
 
 
