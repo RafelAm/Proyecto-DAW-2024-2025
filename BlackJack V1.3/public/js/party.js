@@ -86,10 +86,11 @@ export class Partida {
         this.reiniciando = false;
         this.totalApuestas = 0;
         this.turnoActual = 0;
+        this.countDown = false;
     }
 
     iniciarNuevoJuego() {
-        if (this.reiniciando) return; // 🔒 Evita doble reinicio
+        if (this.reiniciando) return; 
         this.reiniciando = true;
         console.log("Esperando 20 segundos para reiniciar...");
 
@@ -133,18 +134,8 @@ export class Partida {
         }
     }
 
-    iniciarTurnoActual() {
-        const jugador = this.jugadores[this.turnoActual];
-        if (jugador.tipo === "Player" && !jugador.plant) {
-            setTimeout(() => {
-                if (!jugador.plant) {
-                    this.plantarse(this.turnoActual);
-                }
-                this.siguienteTurno();
-                io.to(this.roomId).emit('gameState', { state: this.toJSON() });
-            }, 15000);
-        }
-    }
+    
+    
 
     toJSON() {
         if (this.plantados === this.jugadores.length - 1 && this.plantados >= 1) {
@@ -165,7 +156,8 @@ export class Partida {
                 ganadores: "",
                 reiniciada: true,
                 totalApuestas: 0,
-                turnoActual: 0
+                turnoActual: 0,
+                countDown: this.countDown
             };
         } else {
             return {
@@ -184,7 +176,8 @@ export class Partida {
                 ganadores: "",
                 reiniciada: false,
                 totalApuestas: this.totalApuestas,
-                turnoActual: this.turnoActual
+                turnoActual: this.turnoActual,
+                countDown: this.countDown
             };
         }
     }

@@ -26,42 +26,33 @@ const roomColors = {};
 const MAX_JUGADORES = 4;
 
 const sessionMiddleware = session({
-    secret: 'session-secret-secure', // Clave secreta para firmar la cookie de sesión
-    resave: false,                   // Evita guardar la sesión si no se modifica
-    saveUninitialized: true,         // No guarda sesiones vacías
+    secret: 'session-secret-secure', 
+    resave: false,                   
+    saveUninitialized: true,        
     cookie: {
-        maxAge: 24 * 60 * 60 * 1000, // Duración de la cookie de sesión (1 día)
-        sameSite: 'strict',          // Evita el envío de cookies en solicitudes entre sitios
-        secure: false,               // Cambiar a true si se usa HTTPS
+        maxAge: 24 * 60 * 60 * 1000, 
+        sameSite: 'strict',          
+        secure: false,               
     },
 });
 
 app.use(sessionMiddleware);
 io.use(sharedSession(sessionMiddleware, {
-    autoSave: true, // Guarda automáticamente la sesión si se modifica
+    autoSave: true, 
 }));
 
 io.on('connection', (socket) => {
-    // Función para obtener la configuración de botones según el usuario.
+    
     function obtenerBotonesSegunUsuario(usuario) {
-        // Si el usuario no está autenticado, se sugieren botones para iniciar sesión o registrarse.
         if (!usuario) {
             return ['btnLogin', 'btnRegister'];
         }
-    
-    
-        // Para cualquier otro usuario autenticado se retornan botones básicos.
         return ['btnPedirCarta', 'btnPlantarse'];
     }
-    
-    // Obtener el usuario desde la sesión del handshake.
     const usuario = socket.handshake.session?.username;
-    // Determinar la configuración de botones para este usuario.
     const botones = obtenerBotonesSegunUsuario(usuario);
-    // Enviar al cliente únicamente los botones que le corresponden.
     socket.emit('mostrarBotones', botones);
-    
-    // Escuchar la solicitud del cliente para unirse a una sala.
+
     socket.on('joinRoom', (roomId) => {
         const username = socket.handshake.session?.username;
         if (!username) return socket.emit('error', 'Usuario no autenticado.');
@@ -227,16 +218,22 @@ socket.on('plantarse', ({ roomId }) => {
         if (game.jugadores.some(player => player.nombre === username)) {
             return socket.emit('error', 'Ya estás en la partida');
         }
-    
+
+        // Si la partida ya ha empezado, no se permite unir más jugadores.
+        if (game.empezada) {
+            return socket.emit('error', 'La partida ya ha comenzado y no se pueden unir más jugadores.');
+        }
+
         if (game.jugadores.length < MAX_JUGADORES && !game.empezada) {
             const newPlayer = new Jugador(username);
             game.jugadores.unshift(newPlayer);
             game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player");
-    
-            if (game.jugadores.length > 1) {
-                game.empezada = true;
-                game.repartirCartas();
+            const jugadoresHumanos = game.jugadores.filter(jugador => jugador.tipo === "Player");
+            if (jugadoresHumanos.length >= 2 && !game.empezada) {                
+                game.countDown = true;
+                iniciarCuentaAtras(roomId, game);
             }
+
     
             io.to(roomId).emit('gameState', { state: game.toJSON(), turnoActual: game.turnoActual });
         } else {
@@ -244,7 +241,28 @@ socket.on('plantarse', ({ roomId }) => {
         }
     });
     
+// Función que inicia la cuenta regresiva de 10 segundos
+function iniciarCuentaAtras(roomId, game) {
+    // Bloquear las acciones: apuestas, pedir carta, plantarse, etc.
+    io.to(roomId).emit("bloquearAcciones", true);
     
+    // Emitir el evento que inicia el contador con 10 segundos
+    io.to(roomId).emit("iniciarCuenta", 10);
+  
+    // Inicia el temporizador de 10 segundos
+    setTimeout(() => {
+      // Marcar la partida como empezada y desbloquear las acciones
+      game.empezada = true;
+      io.to(roomId).emit("bloquearAcciones", false);
+      game.repartirCartas();
+      io.to(roomId).emit("gameState", { 
+        state: game.toJSON(), 
+        turnoActual: game.turnoActual 
+      });
+      // Emite un mensaje que indica que se ha pasado el tiempo para unirse
+      io.to(roomId).emit("cuentaFinalizada", "El tiempo para unirse ha finalizado.");
+    }, 10000);
+  }
     
     socket.on('finalRound', ({ roomId }) => {
         const game = games[roomId];
@@ -316,7 +334,7 @@ socket.on('plantarse', ({ roomId }) => {
     
 
 
-    socket.on('disconnect', () => {
+    /*socket.on('disconnect', () => {
         console.log('Usuario desconectado:', socket.handshake.session.username);
     
         const roomId = socket.data.roomId;
@@ -338,7 +356,7 @@ socket.on('plantarse', ({ roomId }) => {
             turnoActual: game.turnoActual // Enviar el índice del jugador en turno
         });
         
-    });
+    });*/
     
     // Manejo de mensajes de chat.
     socket.on('chat message', ({ roomId, message }) => {
