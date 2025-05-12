@@ -1,7 +1,7 @@
 import express from "express";
 import session from "express-session";
 import sharedSession from "socket.io-express-session"; // Importa el middleware
-
+import bcrypt from 'bcrypt';
 import { Crupier, Jugador, Partida } from './public/js/party.js';
 import http from "http";
 import { Server } from "socket.io";
@@ -19,10 +19,8 @@ const __dirname = path.resolve(); // Necesario para usar __dirname en ES Modules
 app.set("view engine", 'ejs')
 app.set('views', path.join(__dirname, '/views'));
 
-app.use(express.static(path.join(__dirname, 'public')))
-const colors = ['red', 'blue', 'green', 'yellow'];
+app.use(express.static(path.join(__dirname, 'public')));
 const games = {};
-const roomColors = {};
 const MAX_JUGADORES = 4;
 
 const sessionMiddleware = session({
@@ -31,8 +29,8 @@ const sessionMiddleware = session({
     saveUninitialized: true,        
     cookie: {
         maxAge: 24 * 60 * 60 * 1000, 
-        sameSite: 'strict',          
-        secure: false,               
+        sameSite: 'lax',             // Cambia a 'lax' para permitir redirecciones
+        secure: false,               // Asegúrate de que sea 'false' en desarrollo
     },
 });
 
@@ -42,6 +40,7 @@ io.use(sharedSession(sessionMiddleware, {
 }));
 
 io.on('connection', (socket) => {
+    console.log('Sesión en Socket.IO:', socket.handshake.session);
     
     function obtenerBotonesSegunUsuario(usuario) {
         if (!usuario) {
@@ -55,7 +54,10 @@ io.on('connection', (socket) => {
 
     socket.on('joinRoom', (roomId) => {
         const username = socket.handshake.session?.username;
-        if (!username) return socket.emit('error', 'Usuario no autenticado.');
+        if (!username) {
+            console.error('Sesión no encontrada en el socket.');
+            return socket.emit('error', 'Usuario no autenticado.');
+        }
     
         socket.data.roomId = roomId;
         socket.data.username = username;
@@ -70,16 +72,6 @@ io.on('connection', (socket) => {
         }
     
         socket.join(roomId);
-    
-        // Asignar un color a la sala si aún no tiene.
-        if (!roomColors[roomId]) {
-            const colorIndex = Object.keys(roomColors).length % colors.length; // Ciclar colores.
-            roomColors[roomId] = colors[colorIndex];
-        }
-    
-        // Enviar el color asignado al cliente.
-        const assignedColor = roomColors[roomId];
-        socket.emit('setBackground', assignedColor);
         
         // Enviar el estado inicial del juego junto con el usuario actual.
         socket.emit('gameState', { 
@@ -385,6 +377,7 @@ app.get("/", (req,res)=>{
 
 // Middleware para verificar si el usuario está autenticado.
 function checkAuth(req, res, next) {
+    console.log('Sesión en checkAuth:', req.session);
     if (!req.session.username) {
         req.session.returnTo = req.originalUrl;  // Guardar la URL original
         return res.redirect("/login");
@@ -407,54 +400,130 @@ app.get('/register', (req,res)=>{
 })
 
 
-// Post para registrar usuarios en BDD
-app.post('/register', (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
 
-    const query = 'INSERT INTO users (username, password) VALUES (?, ?)';
 
-    db.query(query, [username, password], (err, result) => {
-        if (err) {
-            console.error('Error al registrar el usuario:', err);
-            return res.status(500).send('Error al registrar el usuario');
-        }
-        res.redirect("/login")
-    });
+app.post('/register', async (req, res) => {
+    let { nombre, correo, contraseña } = req.body;
+    let mensajeError = '';
+    
+    if (!nombre || !correo || !contraseña) {
+        return res.json({ error: true, mensaje: 'Todos los campos son obligatorios.' });
+    }
+
+    // Convertir el nombre a minúsculas
+    nombre = nombre.trim().toLowerCase();
+    
+    // Expresión regular para validar correos electrónicos
+    const regexCorreo = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if (nombre.length < 3) mensajeError = "El nombre debe tener al menos 3 caracteres.";
+    if (!regexCorreo.test(correo)) mensajeError = "Introduce un correo electrónico válido.";
+    if (contraseña.length < 6) mensajeError = "La contraseña debe tener al menos 6 caracteres.";
+
+    try {
+        const [rowsNombre] = await db.query('SELECT id FROM Usuarios WHERE nombre = ?', [nombre]);
+        if (rowsNombre.length > 0) mensajeError = 'El nombre de usuario ya está en uso.';
+
+        const [rowsCorreo] = await db.query('SELECT id FROM Usuarios WHERE correo = ?', [correo]);
+        if (rowsCorreo.length > 0) mensajeError = 'El correo ya está registrado.';
+
+        if (mensajeError) return res.json({ error: true, mensaje: mensajeError });
+
+        const contraseñaHash = await bcrypt.hash(contraseña, 10);
+        await db.execute('INSERT INTO Usuarios (nombre, correo, contraseña_Hash, dinero, rol) VALUES (?, ?, ?, ?, ?)',
+                         [nombre, correo, contraseñaHash, 100, "Jugador"]);
+
+        return res.json({ error: false, mensaje: 'Usuario registrado exitosamente.' });
+
+    } catch (error) {
+        console.error('Error al registrar el usuario:', error);
+        return res.json({ error: true, mensaje: 'Error interno del servidor.' });
+    }
 });
 
 
-// Página para el login de usuarios 
-app.get('/login', (req,res)=>{
+app.get('/verificar-nombre', async (req, res) => {
+    const { nombre } = req.query;
+    const [rows] = await db.query('SELECT id FROM Usuarios WHERE nombre = ?', [nombre]);
+    res.json({ existe: rows.length > 0 });
+});
 
-    res.render('login')
-})
+app.get('/verificar-correo', async (req, res) => {
+    const { correo } = req.query;
+    const [rows] = await db.query('SELECT id FROM Usuarios WHERE correo = ?', [correo]);
+    res.json({ existe: rows.length > 0 });
+});
 
-// Post para logear al usuario
-app.post('/login', (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
+app.get('/verificar-usuario', async (req, res) => {
+    const { correo } = req.query;
+    
+    const [rowsCorreo] = await db.query('SELECT id FROM Usuarios WHERE correo = ?', [correo]);
+    const [rowsNombre] = await db.query('SELECT id FROM Usuarios WHERE nombre = ?', [correo.toLowerCase()]);
 
-    const query = 'SELECT username, password FROM users WHERE username = ? AND password = ?';
+    res.json({ existe: rowsCorreo.length > 0 || rowsNombre.length > 0 });
+});
 
-    db.query(query, [username, password], (err, result) => {
-        if (err) {
-            console.error('Error al encontrar el usuario:', err);
-            return res.status(500).send('Error al encontrar el usuario');
-        }
+app.get('/login', (req, res) => {
+    res.render('login');
+});
 
-        if (result.length > 0) {
-            req.session.username = username;
+app.post('/login', async (req, res) => {
+    let { correo, contraseña } = req.body;
 
-            // Redirigir al usuario a la partida si tenía una URL guardada
-            const redirectTo = req.session.returnTo || "/";
-            delete req.session.returnTo;  // Eliminar la variable de sesión para evitar errores futuros
-            
-            return res.redirect(redirectTo);
+    if (!correo || !contraseña) {
+        return res.json({ error: true, mensaje: 'Todos los campos son obligatorios.' });
+    }
+
+    const regexCorreo = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!regexCorreo.test(correo) && correo.length < 3) {
+        return res.json({ error: true, mensaje: 'Introduce un correo válido o un nombre de usuario válido.' });
+    }
+
+    try {
+        let usuario;
+        const [rowsCorreo] = await db.query('SELECT * FROM Usuarios WHERE correo = ?', [correo]);
+        if (rowsCorreo.length > 0) {
+            usuario = rowsCorreo[0];
         } else {
-            res.status(401).send('Usuario o contraseña incorrectos');
+            const [rowsNombre] = await db.query('SELECT * FROM Usuarios WHERE nombre = ?', [correo.toLowerCase()]);
+            if (rowsNombre.length > 0) {
+                usuario = rowsNombre[0];
+            }
         }
-    });
+
+        if (!usuario) {
+            return res.json({ error: true, mensaje: 'Usuario no encontrado. ¿Quieres <a href="/register">registrarte</a>?' });
+        }
+
+        const match = await bcrypt.compare(contraseña, usuario.contraseña_Hash);
+        if (!match) {
+            return res.json({ error: true, mensaje: 'Contraseña incorrecta. Inténtalo de nuevo.' });
+        }
+
+        // Almacenar datos en la sesión
+        req.session.username = usuario.nombre; // Asegúrate de usar 'username' en lugar de 'usuario'
+
+        req.session.save(err => {
+            if (err) {
+                console.error('Error al guardar la sesión:', err);
+                return res.json({ error: true, mensaje: 'Error interno del servidor.' });
+            }
+            console.log('Sesión después del login:', req.session);
+            return res.json({ error: false, mensaje: `Bienvenido ${usuario.nombre}`, redirect: '/' });
+        });
+
+    } catch (error) {
+        console.error('Error al iniciar sesión:', error);
+        return res.json({ error: true, mensaje: 'Error interno del servidor.' });
+    }
+});
+
+app.get('/session-status', (req, res) => {
+    if (req.session.usuario) {
+        res.send(`Usuario en sesión: ${JSON.stringify(req.session.usuario)}`);
+    } else {
+        res.send('No hay usuario en la sesión.');
+    }
 });
 
 

@@ -4,7 +4,12 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+    background-image: url("/images/background.svg");
+  background-repeat: no-repeat;
+  background-size: cover;
 }
+
+
 
 body .mesa {
   position: absolute;
@@ -23,11 +28,18 @@ body .mesa {
   background-color: white;
   height: 10%;
 }
-
+.puntos {
+  padding: 0 2%;
+  background-color: white;
+  position: absolute;
+  top: 90%;
+  left: 0;
+  height: 22%;
+}
 body .Crupier,
 body .Player {
   position: absolute;
-  top: 0;
+  top: 2%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -36,14 +48,6 @@ body .Player {
   height: 150px;
 }
 
-body .Crupier .info .puntos { /* Jugador abajo */
-  position: absolute;
-  bottom: 90%;
-  right: 50%;
-  height: 23%;
-  width: 25%;
-  padding: 0;
-}
 body .Crupier .cartas { /* Jugador abajo */
   position: absolute;
   left: 20%;
@@ -95,9 +99,15 @@ body .Player:nth-child(2) { /* Jugador izquierda */
 }
 
 body .Player:nth-child(3) { /* Jugador derecha */
-  right: -10%;
   top: 50%;
+  left: 75%;
   transform: translateY(-50%);
+}
+
+body .Player:nth-child(3) .cartas { /* Jugador derecha */
+  position: absolute;
+  top: 120%;
+  left: 0%;
 }
 
 body .botones {
@@ -191,14 +201,7 @@ body .info .name {
   text-align: center;
   background-color: white;
 }
-body .info .puntos {
-  padding: 0 2%;
-  background-color: white;
-    position: absolute;
-  top: 90%;
-  left: 3%;
-  height: 22%;
-}
+
 
 
 .personal-container{
@@ -212,4 +215,6 @@ body .info .puntos {
 .tbl{
   position: absolute;
   top: 15%;
+  width: 65%;
+  filter: drop-shadow(0 0 100px rgba(0,0,0..8))
 }

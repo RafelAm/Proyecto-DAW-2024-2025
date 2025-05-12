@@ -1,10 +1,76 @@
 <%- include('partials/header')%>
 
-    <form action="" method="POST">
-        <label for="username">Nombre de Usuario:</label><br>
-        <input type="text" name="username" id="username"><br>
-        <label for="password">Contraseña</label><br>
-        <input type="password" name="password" id="password"><br>
-        <button type="submit">Registar</button>
-    </form>
+<form id="registroForm">
+    <label for="nombre">Nombre:</label><br>
+    <input type="text" name="nombre" id="nombre" required onblur="verificarNombre()"><br>
+    <small id="nombreError" style="color: red;"></small><br>
+
+    <label for="correo">Correo Electrónico:</label><br>
+    <input type="email" name="correo" id="correo" required onblur="verificarCorreo()"><br>
+    <small id="correoError" style="color: red;"></small><br>
+
+    <label for="contraseña">Contraseña:</label><br>
+    <input type="password" name="contraseña" id="contraseña" required><br>
+
+    <button type="submit">Registrar</button>
+</form>
+
+<p id="mensaje" style="color: green; font-size: 16px; font-weight: bold; display: none;"></p>
+
 <%- include('partials/footer')%>
+
+<script>
+document.getElementById('registroForm').addEventListener('submit', async function(event) {
+    event.preventDefault(); // Evita la recarga de la página
+
+    const nombre = document.getElementById('nombre').value.trim().toLowerCase();
+    const correo = document.getElementById('correo').value.trim();
+    const contraseña = document.getElementById('contraseña').value.trim();
+
+    const response = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, correo, contraseña })
+    });
+
+    const data = await response.json();
+    const mensajeElemento = document.getElementById('mensaje');
+    
+    mensajeElemento.innerText = data.mensaje;
+    mensajeElemento.style.display = 'block';
+
+    if (!data.error) {
+        mensajeElemento.style.color = 'green';
+    } else {
+        mensajeElemento.style.color = 'red';
+    }
+});
+
+async function verificarNombre() {
+    const nombre = document.getElementById('nombre').value.trim().toLowerCase();
+    if (nombre.length < 3) {
+        document.getElementById('nombreError').innerText = 'El nombre debe tener al menos 3 caracteres.';
+        return;
+    }
+
+    const response = await fetch(`/verificar-nombre?nombre=${nombre}`);
+    const data = await response.json();
+
+    document.getElementById('nombreError').innerText = data.existe ? 'El nombre de usuario ya está en uso. Por favor, elige otro.' : '';
+}
+
+async function verificarCorreo() {
+    const correo = document.getElementById('correo').value.trim();
+    const regexCorreo = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if (!regexCorreo.test(correo)) {
+        document.getElementById('correoError').innerText = 'Introduce un correo electrónico válido.';
+        return;
+    }
+
+    const response = await fetch(`/verificar-correo?correo=${correo}`);
+    const data = await response.json();
+
+    document.getElementById('correoError').innerText = data.existe ? 'El correo ya está registrado. Usa otro o inicia sesión.' : '';
+}
+</script>

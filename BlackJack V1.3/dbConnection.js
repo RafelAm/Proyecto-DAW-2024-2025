@@ -4,8 +4,8 @@ const db = mysql2.createConnection({
     host: "localhost",
     user: "root",
     password: "",
-    database: "users",
-});
+    database: "blackjackdb",
+}).promise();
 
 db.connect((err) => {
     if (err) throw err;
