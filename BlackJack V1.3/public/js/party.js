@@ -30,12 +30,12 @@ export class Jugador extends Participante {
     balance;
     apuesta;
 
-    constructor(nombre) {
+    constructor(id,nombre,balance) {
         super();
-        this.id = Math.floor(Math.random() * 100000);
+        this.id = id;
         this.nombre = nombre;
         this.tipo = "Player";   
-        this.balance = 1000;
+        this.balance = balance;
         this.apuesta = 0;
     }
 }
@@ -77,6 +77,7 @@ class Baraja{
 
 export class Partida {
     constructor(jugadores) {
+        this.idPartida = 0;
         this.name = "New Game";
         this.baraja = new Baraja();
         this.plantados = 0;
@@ -141,6 +142,7 @@ export class Partida {
         if (this.plantados === this.jugadores.length - 1 && this.plantados >= 1) {
             this.iniciarNuevoJuego();
             return {
+                idPartida: this.idPartida,
                 jugadores: this.jugadores.map(j => ({
                     nombre: j.nombre,
                     tipo: j.tipo,
@@ -161,6 +163,7 @@ export class Partida {
             };
         } else {
             return {
+                idPartida: this.idPartida,
                 jugadores: this.jugadores.map(j => ({
                     nombre: j.nombre,
                     tipo: j.tipo,
