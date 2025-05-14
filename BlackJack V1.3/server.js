@@ -272,8 +272,10 @@ async function iniciarCuentaAtras(roomId, game, db) {
                 ]
             );
 
+
             const idPartida = resultadoPartida.insertId; // Obtener el ID de la partida insertada
             game.idPartida = idPartida; // Guardar el ID de la partida en el objeto `game`
+            
             // **2. Generar la URL única para la partida**
             const urlPartida = `game/${roomId}`;
 
@@ -281,6 +283,12 @@ async function iniciarCuentaAtras(roomId, game, db) {
             await db.execute(
                 `UPDATE Partida SET url_partida = ? WHERE id = ?`,
                 [urlPartida, idPartida]
+            );
+
+            const barajaString = JSON.stringify(game.baraja);
+            await db.execute(
+                `INSERT INTO Baraja (idPartida, baraja, fecha_partida) VALUES (?, ?, CURDATE())`,
+                [idPartida, barajaString]
             );
 
             // **4. Registrar cada jugador en `ParticipaEn`**
@@ -301,14 +309,10 @@ async function iniciarCuentaAtras(roomId, game, db) {
 
             // **5. Obtener o registrar el crupier**
             let idCrupier;
-            const [crupierExistente] = await db.query(`SELECT id FROM Crupier LIMIT 1`);
-            if (crupierExistente.length > 0) {
-                idCrupier = crupierExistente[0].id;
-            } else {
-                const [nuevoCrupier] = await db.execute(`INSERT INTO Crupier (derrotas, victorias) VALUES (0, 0)`);
-                idCrupier = nuevoCrupier.insertId;
-            }
-
+            const [nuevoCrupier] = await db.execute(`INSERT INTO Crupier (derrotas, victorias) VALUES (0, 0)`);
+            
+            idCrupier = nuevoCrupier.insertId;
+            game.idCrupier = idCrupier;
             // **6. Registrar el crupier en `ParticipaEnCrupier`**
             await db.execute(
                 `INSERT INTO ParticipaEnCrupier (idCrupier, idPartida, puntos, estado, ganador, fecha_partida) 
@@ -349,6 +353,13 @@ async function iniciarCuentaAtras(roomId, game, db) {
         console.log("🚀 Ejecutando manejarFinalRound");
     if (!game) return;
         let idPartida = game.idPartida;
+        game.ganadores = game.ganadorPuntuacion();
+
+        let idCrupier = game.idCrupier;
+        console.log("🚀 ID del Crupier:", idCrupier);
+        console.log("🚀 ID de la Partida:", idPartida);
+        let ganadoresString = game.ganadores.map(g => g.nombre).join(", ");
+        console.log("🚀 Ganadores:", ganadoresString);
     try {
         console.log("⚡ Ejecutando finalRound...");
 
@@ -367,7 +378,7 @@ async function iniciarCuentaAtras(roomId, game, db) {
             await db.execute(
                 `UPDATE ParticipaEn SET ganador = ?, puntos = ?, apuesta = ? WHERE idUsuario = ? AND idPartida = ?`,
                 [
-                    jugador.ganador ?? "Finalizada", // Si no está definido, usa "Pendiente"
+                    ganadoresString ?? "Error", // Si no está definido, usa "Pendiente"
                     jugador.puntaje ?? 0, // Si no está definido, usa 0
                     jugador.apuesta ?? 0, // Si no está definido, usa 0
                     jugador.id ?? null, // Si no está definido, usa null
@@ -375,19 +386,24 @@ async function iniciarCuentaAtras(roomId, game, db) {
                 ]
             );
         }
-
+        let crupierVictoria = game.ganadores.some(g => g.nombre === "Crupier") ? 1 : 0;
+        let crupierDerrota = crupierVictoria === 1 ? 0 : 1;
+        console.log("✅ Crupier Victoria:", crupierVictoria);
+        console.log("✅ Crupier Derrota:", crupierDerrota);
         // **3. Actualizar crupier**
-        /*await db.execute(
+        const [resultadoUpdate] = await db.execute(
             `UPDATE Crupier SET victorias = victorias + ?, derrotas = derrotas + ? WHERE id = ?`,
-            [game.crupier.victorias, game.crupier.derrotas, game.idCrupier]
-        );*/
+            [crupierVictoria, crupierDerrota, idCrupier]
+        );
+
+
 
         await db.execute(
             `UPDATE ParticipaEnCrupier SET ganador = ?, puntos = ? WHERE idCrupier = ? AND idPartida = ?`,
             [
-                "Pendiente",
+                ganadoresString ?? "Error",
                 game.jugadores[game.jugadores.length-1]?.puntaje ?? 0,
-                game.jugadores[game.jugadores.length-1].id ?? null,
+                idCrupier ?? null,
                 idPartida ?? null
             ]
         );
@@ -401,7 +417,7 @@ async function iniciarCuentaAtras(roomId, game, db) {
         await db.execute(
             `UPDATE Partida SET ganador = ?, puntos_crupier = ?, puntos_jugador_1 = ?, puntos_jugador_2 = ?, puntos_jugador_3 = ? WHERE id = ?`,
             [
-                game.ganador ?? "Pendiente",
+                ganadoresString ?? "Error",
                 game.jugadores[game.jugadores.length-1]?.puntaje ?? 0,
                 puntosJugadores[0], // Jugador 1
                 puntosJugadores[1], // Jugador 2

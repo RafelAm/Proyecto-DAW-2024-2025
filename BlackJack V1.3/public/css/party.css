@@ -4,13 +4,15 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-    background-image: url("/images/background.svg");
-  background-repeat: no-repeat;
-  background-size: cover;
+  position: relative;
+  background: none;
+  min-height: 100vh;
 }
-
-
-
+body .tbl {
+  position: absolute;
+  top: 15%;
+  width: 65%;
+}
 body .mesa {
   position: absolute;
   top: 50%;
@@ -21,20 +23,6 @@ body .mesa {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.apuesta{
-  padding: 0 2%;
-  background-color: white;
-  height: 10%;
-}
-.puntos {
-  padding: 0 2%;
-  background-color: white;
-  position: absolute;
-  top: 90%;
-  left: 0;
-  height: 22%;
 }
 body .Crupier,
 body .Player {
@@ -47,29 +35,29 @@ body .Player {
   width: 30%;
   height: 150px;
 }
-
-body .Crupier .cartas { /* Jugador abajo */
-  position: absolute;
-  left: 20%;
-}
-
-body .Crupier .info .personal-container .name { /* Jugador abajo */
+body .Crupier .info .personal-container .name,
+body .Player .info .personal-container .name {
   position: absolute;
   width: 20%;
   bottom: 90%;
 }
-
-body .Player .botones-container { /* Jugador abajo */
+body .Crupier .cartas,
+body .Player .cartas {
+  position: absolute;
+  left: 20%;
+}
+body .Crupier .botones-container,
+body .Player .botones-container {
   display: flex;
   position: absolute;
   top: 100%;
   left: 45%;
   width: 70%;
   height: 40%;
-
   justify-content: center;
 }
-body .Player .botones-container button { /* Jugador abajo */
+body .Crupier .botones-container button,
+body .Player .botones-container button {
   width: 50%;
   background-color: black;
   border: none;
@@ -79,37 +67,31 @@ body .Player .botones-container button { /* Jugador abajo */
   border-radius: 5%;
   font-size: 1em;
 }
-
-body .Player:nth-child(1) { /* Jugador abajo */
+body .Player:nth-child(1) {
   bottom: -10%;
   top: 70%;
   left: 50%;
   transform: translateX(-50%);
 }
-
-.img-crupier {
-  width: 10vw;
-  height: 20vh;
-}
-
-body .Player:nth-child(2) { /* Jugador izquierda */
+body .Player:nth-child(2) {
   left: 15%;
   top: 50%;
   transform: translateY(-50%);
 }
-
-body .Player:nth-child(3) { /* Jugador derecha */
+body .Player:nth-child(3) {
   top: 50%;
   left: 75%;
   transform: translateY(-50%);
 }
-
-body .Player:nth-child(3) .cartas { /* Jugador derecha */
+body .Player:nth-child(3) .cartas {
   position: absolute;
   top: 120%;
   left: 0%;
 }
-
+body .img-crupier {
+  width: 10vw;
+  height: 20vh;
+}
 body .botones {
   position: absolute;
   bottom: 5%;
@@ -119,7 +101,6 @@ body .botones {
   justify-content: space-around;
   width: 50%;
 }
-
 body .botones button {
   padding: 10px 15px;
   font-size: 1rem;
@@ -130,14 +111,17 @@ body .botones button {
   border-radius: 5px;
   cursor: pointer;
 }
-
 body .botones button:hover {
   background-color: red;
 }
-
-
-
-
+body .puntos {
+  padding: 0 2%;
+  background-color: white;
+  position: absolute;
+  top: 90%;
+  left: 0;
+  height: 22%;
+}
 body .cardsCr {
   z-index: 1;
   display: flex;
@@ -172,7 +156,6 @@ body .cards img {
   width: 100%;
   height: 100%;
 }
-
 body .cartas {
   display: flex;
   flex-direction: row;
@@ -195,26 +178,40 @@ body .info p {
   font-weight: bold;
   color: black;
 }
-
 body .info .name {
   width: 100%;
   text-align: center;
   background-color: white;
 }
-
-
-
-.personal-container{
+body .personal-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 33%;
 }
-
-.tbl{
+body #apuestaContainer {
   position: absolute;
-  top: 15%;
-  width: 65%;
-  filter: drop-shadow(0 0 100px rgba(0,0,0..8))
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 10%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("/images/logo2.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: blur(10px);
+  z-index: -1;
+}/*# sourceMappingURL=party.css.map */

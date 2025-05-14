@@ -53,7 +53,7 @@ class Baraja{
         let baraja =[];
         for(let i = 0; i < this.cards.length; i++){
             for(let j = 0; j < this.palos.length; j++){
-                baraja.push({"Palo": this.palos[j], "Número": this.cards[i],"Destapada":true});
+                baraja.push({"palo": this.palos[j], "numero": this.cards[i],"Destapada":true});
             }
         }
         this.baraja = baraja;
@@ -78,6 +78,7 @@ class Baraja{
 export class Partida {
     constructor(jugadores) {
         this.idPartida = 0;
+        this.idCrupier = 0;
         this.name = "New Game";
         this.baraja = new Baraja();
         this.plantados = 0;
@@ -97,13 +98,15 @@ export class Partida {
 
         setTimeout(() => {
             console.log("Reiniciando partida...");
+
             this.jugadores.forEach(player => {
                 player.puntaje = 0;
                 player.cartas = [];
                 player.plant = false;
                 player.apuesta = 0;
             });
-
+            this.idPartida = 0;
+            this.idCrupier = 0;
             this.baraja = new Baraja();
             this.plantados = 0;
             this.empezada = false;
@@ -142,7 +145,7 @@ export class Partida {
         if (this.plantados === this.jugadores.length - 1 && this.plantados >= 1) {
             this.iniciarNuevoJuego();
             return {
-                idPartida: this.idPartida,
+
                 jugadores: this.jugadores.map(j => ({
                     nombre: j.nombre,
                     tipo: j.tipo,
@@ -152,10 +155,12 @@ export class Partida {
                     balance: j.balance,
                     apuesta: 0
                 })),
+                idPartida: this.idPartida,
+                idCrupier: this.idCrupier,
                 baraja: this.baraja.baraja,
                 plantados: this.plantados,
                 empezada: this.empezada,
-                ganadores: "",
+                ganadores: this.ganadorPuntuacion(),
                 reiniciada: true,
                 totalApuestas: 0,
                 turnoActual: 0,
@@ -163,7 +168,7 @@ export class Partida {
             };
         } else {
             return {
-                idPartida: this.idPartida,
+
                 jugadores: this.jugadores.map(j => ({
                     nombre: j.nombre,
                     tipo: j.tipo,
@@ -173,6 +178,8 @@ export class Partida {
                     balance: j.balance,
                     apuesta: j.apuesta
                 })),
+                idPartida: this.idPartida,
+                idCrupier: this.idCrupier,
                 baraja: this.baraja.baraja,
                 plantados: this.plantados,
                 empezada: this.empezada,
@@ -225,18 +232,18 @@ export class Partida {
         this.jugadores[j].puntaje = 0;
 
         for (let i = 0; i < this.jugadores[j].cartas.length; i++) {
-            if (this.jugadores[j].cartas[i]["Número"] == "A") {
+            if (this.jugadores[j].cartas[i]["numero"] == "A") {
                 if ((this.jugadores[j].puntaje + 11) > 21) {
                     this.jugadores[j].puntaje += 1;
                 } else {
                     this.jugadores[j].puntaje += 11;
                 }
             } else if (
-                ["Q", "K", "J"].includes(this.jugadores[j].cartas[i]["Número"])
+                ["Q", "K", "J"].includes(this.jugadores[j].cartas[i]["numero"])
             ) {
                 this.jugadores[j].puntaje += 10;
             } else {
-                this.jugadores[j].puntaje += this.jugadores[j].cartas[i]["Número"];
+                this.jugadores[j].puntaje += this.jugadores[j].cartas[i]["numero"];
             }
         }
     }
