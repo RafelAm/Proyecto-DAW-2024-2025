@@ -16,22 +16,39 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
-    <div class="logo"><img src="/images/logo.png" alt="">  Mi Sitio</div>
+
     
+<nav class="navbar">
+    <div class="logo"><img src="/images/logo.png" alt="">  Mi Sitio</div>
+    <button class="menu-toggle">☰</button>
     <ul class="nav-links">
-        <li><button class="menu-toggle">☰</button></li>
-        <li><a href="#">Inicio</a></li>
-        <li><a href="#">Sobre Nosotros</a></li>
-        <li><a href="#">Servicios</a></li>
+        <li><a href="/">Inicio</a></li>
+        <li><a href="#partidas">Partidas</a></li>
+        <li><a href="#howToPlay">¿Como jugar?</a></li>
         <li><a href="#">Contacto</a></li>
+        <% if (!loggedIn) { %>
+            <li><a href="/login">Iniciar Sesión</a></li>
+            <li><a href="/register">Registrarse</a></li>
+        <% } else { %>
+            <li>        
+                <form action="/logout" method="POST">
+                <button type="submit">Cerrar Sesión</button>
+                </form>
+            </li>
+        <% } %>
+
     </ul>
 </nav>
 
 <script>
 
-    document.querySelector(".menu-toggle").addEventListener("click", function() {
-        document.querySelector(".nav-links").classList.toggle("active");
+    document.addEventListener("DOMContentLoaded", function() {
+        const menuToggle = document.querySelector(".menu-toggle");
+        const navLinks = document.querySelector(".nav-links");
+
+        menuToggle.addEventListener("click", function() {
+            navLinks.classList.toggle("active");
+        });
     });
 
 </script>

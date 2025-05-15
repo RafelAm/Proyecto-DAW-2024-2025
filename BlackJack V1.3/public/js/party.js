@@ -76,7 +76,8 @@ class Baraja{
 
 
 export class Partida {
-    constructor(jugadores) {
+    constructor(jugadores, ruta) {
+        this.ruta = ruta;
         this.idPartida = 0;
         this.idCrupier = 0;
         this.name = "New Game";
@@ -105,6 +106,7 @@ export class Partida {
                 player.plant = false;
                 player.apuesta = 0;
             });
+            this.ruta = this.ruta;
             this.idPartida = 0;
             this.idCrupier = 0;
             this.baraja = new Baraja();
@@ -155,6 +157,7 @@ export class Partida {
                     balance: j.balance,
                     apuesta: 0
                 })),
+                ruta: this.ruta,
                 idPartida: this.idPartida,
                 idCrupier: this.idCrupier,
                 baraja: this.baraja.baraja,
@@ -178,6 +181,7 @@ export class Partida {
                     balance: j.balance,
                     apuesta: j.apuesta
                 })),
+                ruta: this.ruta,
                 idPartida: this.idPartida,
                 idCrupier: this.idCrupier,
                 baraja: this.baraja.baraja,

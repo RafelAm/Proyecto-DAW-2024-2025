@@ -20,9 +20,10 @@ app.set("view engine", 'ejs')
 app.set('views', path.join(__dirname, '/views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
-const games = {};
-const MAX_JUGADORES = 4;
 
+const games = {};
+const MAX_JUGADORES = 2;
+const INITIAL_GAMES = 1;
 const sessionMiddleware = session({
     secret: 'session-secret-secure', 
     resave: false,                   
@@ -40,12 +41,18 @@ io.use(sharedSession(sessionMiddleware, {
 }));
 
 
+generarDosPartidas();
+function generarDosPartidas(){
+        for(let i = 1; i <= INITIAL_GAMES; i++){
+            const crupier = new Crupier();
+            games[i] = new Partida([crupier],i);
+        }
+}
 
 
 
 
 io.on('connection', (socket) => {
-    console.log('Sesión en Socket.IO:', socket.handshake.session);
     
     function obtenerBotonesSegunUsuario(usuario) {
         if (!usuario) {
@@ -56,6 +63,9 @@ io.on('connection', (socket) => {
     const usuario = socket.handshake.session?.username;
     const botones = obtenerBotonesSegunUsuario(usuario);
     socket.emit('mostrarBotones', botones);
+
+
+
 
     socket.on('joinRoom', (roomId) => {
         const username = socket.handshake.session?.username;
@@ -68,20 +78,23 @@ io.on('connection', (socket) => {
         socket.data.username = username;
     
         let game = games[roomId];
-    
+        
         // Si no existe una partida para esta sala, crearla.
-        if (!game) {
+        if (!game ) {
             const crupier = new Crupier();
-            games[roomId] = new Partida([crupier]);
+            games[roomId] = new Partida([crupier],roomId);
             game = games[roomId];
         }
     
         socket.join(roomId);
         
+        if (game.jugadores.some(player => player.nombre === username)) {
+            return socket.emit('error', 'Ya estás en la partida o como espectador.');
+        }
         // Enviar el estado inicial del juego junto con el usuario actual.
         socket.emit('gameState', { 
             state: game.toJSON(),
-            currentUsername: usuario, // 'usuario' extraído de la sesión de handshake
+            currentUsername: username, // 'usuario' extraído de la sesión de handshake
             turnoActual: game.turnoActual 
         });
     });
@@ -95,6 +108,7 @@ io.on('connection', (socket) => {
         }
     
         socket.emit('gameState', { state: game.toJSON(), turnoActual: game.turnoActual });
+        socket.emit('info');
     });
     
 
@@ -237,7 +251,9 @@ socket.on('plantarse', ({ roomId }) => {
         }
     } else {
         socket.emit('error', 'La partida está llena.');
+        maxGames++;
     }
+    socket.emit('info');
 });
 
     
@@ -495,8 +511,7 @@ async function iniciarCuentaAtras(roomId, game, db) {
 
 
 
-    /*socket.on('disconnect', () => {
-        console.log('Usuario desconectado:', socket.handshake.session.username);
+    socket.on('disconnect', () => {
     
         const roomId = socket.data.roomId;
         if (!roomId || !games[roomId]) return;
@@ -517,7 +532,7 @@ async function iniciarCuentaAtras(roomId, game, db) {
             turnoActual: game.turnoActual // Enviar el índice del jugador en turno
         });
         
-    });*/
+    });
     
     // Manejo de mensajes de chat.
     socket.on('chat message', ({ roomId, message }) => {
@@ -539,33 +554,82 @@ app.use(express.urlencoded({ extended: true }));
 
 // Página de incio
 app.get("/", (req,res)=>{
-    const username = req.session.username;
-    res.render("home", {username})
+    res.render("home", {loggedIn: !!req.session.username })
 })
 
 
 // Middleware para verificar si el usuario está autenticado.
 function checkAuth(req, res, next) {
-    console.log('Sesión en checkAuth:', req.session);
+    res.locals.loggedIn = !!req.session.username; // Variable accesible desde las vistas
     if (!req.session.username) {
         req.session.returnTo = req.originalUrl;  // Guardar la URL original
         return res.redirect("/login");
     }
     next();
 }
-
+app.use((req, res, next) => {
+    res.locals.loggedIn = !!req.session.username; // Definir la variable para todas las vistas
+    next();
+});
   
   // Ruta protegida usando el middleware.
-  app.get("/game/:id", checkAuth, (req, res) => {
-    res.render("game", { username: req.session.username });
-  });
-  
+app.get("/game/:id", checkAuth, (req, res) => {
+    const gameId = parseInt(req.params.id, 10);
+    let game = games[gameId];
+
+    // Verificar si la partida solicitada existe
+    if (!game) {
+        return res.redirect("/");
+    }
+
+    res.render("game", { loggedIn: !!req.session.username, game });
+});
 
 
+app.get("/game", (req, res) => {
+    res.json(Object.values(games)); // Convierte el objeto en un array y lo envía como JSON
+});
+app.get("/api/game/:id", (req, res) => {
+    const gameId = req.params.id;
+    let game = games[gameId];
+
+    // Si la partida no existe o el ID está fuera del rango permitido
+    if (!game || gameId > INITIAL_GAMES) {
+        return res.redirect("/"); // Redirigir a una página de error
+    }
+
+    res.json(game);
+});
+
+function checkAndOpenNewGame() {
+    // Recorre todas las partidas existentes para saber si alguna tiene espacio.
+    let allFull = true;
+    for (let gameId in games) {
+        if (games.hasOwnProperty(gameId)) {
+            // Si alguna partida tiene menos de la cantidad máxima de jugadores, detenemos la función.
+            if (games[gameId].jugadores.length < MAX_JUGADORES) {
+                allFull = false;
+                break;
+            }
+        }
+    }
+
+    // Si todas las partidas están llenas, se crea una nueva partida.
+    if (allFull) {
+        // Calcula el nuevo ID: el máximo ID existente + 1
+        const currentIds = Object.keys(games).map(Number);
+        const newGameId = currentIds.length > 0 ? Math.max(...currentIds) + 1 : 1;
+        games[newGameId] = new Partida([new Crupier()], newGameId);
+        console.log(`¡Nueva partida creada! ID: /game/${newGameId}`);
+    }
+}
+
+// Verificar cada cierto tiempo si las partidas están llenas
+setInterval(checkAndOpenNewGame, 5000); // Revisa cada 5 segundos
 // Página para el registro de usuarios
 app.get('/register', (req,res)=>{
 
-    res.render('register')
+    res.render('register', { loggedIn: !!req.session.username })
 })
 
 
@@ -633,7 +697,7 @@ app.get('/verificar-usuario', async (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-    res.render('login');
+    res.render('login', { loggedIn: !!req.session.username });
 });
 
 app.post('/login', async (req, res) => {

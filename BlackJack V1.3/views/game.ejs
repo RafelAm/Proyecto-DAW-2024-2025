@@ -40,7 +40,16 @@
 
       // Unirse a la sala
       socket.emit("joinRoom", roomId);
+      socket.on('actualizarJugadores', (jugadores) => {
+          const jugadoresLista = document.getElementById('jugadoresLista');
+          jugadoresLista.innerHTML = '';
 
+          jugadores.forEach(jugador => {
+              const elemento = document.createElement('li');
+              elemento.textContent = jugador;
+              jugadoresLista.appendChild(elemento);
+          });
+      });
       //Estado del juego
       socket.on("gameState", (gameState) => {
         currentUsername = gameState.currentUsername || currentUsername;

@@ -1,4 +1,5 @@
 .navbar {
+    font-family: Arial, sans-serif;
     position: fixed;
     top: 0;
     left: 0;
@@ -55,7 +56,7 @@
                 background: none;
                 border: none;
                 color: white;
-                font-size: 1.8rem;
+                font-size: 3em;
                 cursor: pointer;
             }
 }
@@ -64,21 +65,46 @@
 
 /* 📱 Ajustes para móviles y tablets */
 @media (max-width: 768px) {
-    .nav-links {
-        display: none;
-        flex-direction: column;
-        background-color: #007bff;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        width: 100%;
-        padding: 10px;
-        text-align: center;
+    .navbar{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+    .logo {
+        display: none; /* Se expandirá según el espacio disponible */
+    }           
+    
+.nav-links {
+    visibility: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-30px); // Inicia desplazado más arriba
+    transition: max-height 1.0s ease, opacity 0.9s ease, transform 0.9s ease; // Animación más suave
 
-        li {
-            padding: 10px 0;
-        }
+    display: flex;
+    flex-direction: column;
+    background-color: #007bff;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+
+    li {
+        padding: 10px 0;
     }
+
+    &.active {
+        visibility: visible;
+        max-height: 600px; 
+        opacity: 1;
+        transform: translateY(0); 
+    }
+}
+
+
+
 
     .menu-toggle {
         display: block;
@@ -87,4 +113,5 @@
     .nav-links.active {
         display: flex;
     }
+}
 }

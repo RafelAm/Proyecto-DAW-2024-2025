@@ -1,16 +1,133 @@
 <%- include('partials/header') %>
-    <h1>Home Page Test</h1>
-    <% if(username){ %>
-        <h1>¡Bienvenido <%= username %>!</h1>
-        <form action="/logout" method="POST">
-            <button type="submit" value="">Cerrar Sesion</button>
-        </form>
-        
-    <% }else { %>
-        <a href="/register">Register</a>
-        <a href="/login">Login</a>
-    <% } %>
-    <br>
-    <a href="game/1" target="">Partida 1</a>
-    <a href="game/2" target="">Partida 2</a>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackJack</title>
+    <link rel="stylesheet" href="/css/home.css">
+</head>
+<body>
+    <!-- Carrusel de imágenes -->
+    <section class="carousel">
+        <div class="carousel-container">
+            <div class="carousel-item active">
+                <img src="/images/logo2.png" alt="Imagen 1">
+            </div>
+            <div class="carousel-item">
+                <img src="/images/logo5.png" alt="Imagen 2">
+            </div>
+            <div class="carousel-item">
+                <img src="/images/logo6.png" alt="Imagen 3">
+            </div>
+        </div>
+    </section>
+
+    <!-- Listado de partidas -->
+    <section class="game-list">
+        <h2>Listado de Partidas</h2>
+        <div class="games">
+            
+            </div>
+        </div>
+        <button class="random-game">Partida Aleatoria</button>
+    </section>
+
+    <!-- Sección ¿Cómo jugar? -->
+    <section class="how-to-play">
+        <h2>¿Cómo Jugar?</h2>
+        <video controls>
+            <source src="tutorial.mp4" type="video/mp4">
+            Tu navegador no soporta videos.
+        </video>
+    </section>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    const socket = io();
+    let indice = 1;
+fetch("/game")
+    .then(response => response.json()) // Convertir la respuesta a JSON
+    .then(games => {
+        console.log("Lista de partidas:", games); // Verificar datos en consola
+
+        const gamesContainer = document.querySelector(".games"); // Selecciona el contenedor principal
+
+        games.forEach((game) => {
+            // Crear un nuevo elemento de partida
+            const gameElement = document.createElement("div");
+            gameElement.classList.add("game");
+
+            gameElement.innerHTML = `
+                <img src="/images/logo.png" alt="Partida ${game.ruta}">
+                <div class="content">
+                    <h4>Partida ${game.ruta}</h4>
+                    <p class="players">Jugadores: ${game.jugadores.length}</p>
+                    <button class="join-game" data-id="${game.ruta}">Jugar</button>
+                </div>
+            `;
+
+            gamesContainer.appendChild(gameElement); // Añadir la nueva partida a la pantalla
+        });
+
+        // Después de agregar los elementos, asignamos eventos a cada botón
+        document.querySelectorAll(".join-game").forEach(button => {
+            button.addEventListener("click", () => {
+                const gameId = button.getAttribute("data-id");
+                window.location.href = `/game/${gameId}`;
+            });
+        });
+    })
+    .catch(error => console.error("Error en la petición:", error));
+
+
+
+
+
+
+
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        let index = 0;
+        const slides = document.querySelectorAll(".carousel-item");
+
+        function showSlide(newIndex) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove("active", "previous");
+                slide.style.opacity = "0";
+                slide.style.transform = "translateX(-100%)"; // La imagen nueva entra desde la izquierda
+            });
+
+            slides[index].classList.add("previous"); // La imagen actual se desliza a la derecha
+            slides[index].style.transform = "translateX(100%)";
+
+            slides[newIndex].classList.add("active");
+            slides[newIndex].style.opacity = "1";
+            slides[newIndex].style.transform = "translateX(0)";
+
+            index = newIndex;
+        }
+
+
+        setInterval(function () {
+            showSlide((index + 1) % slides.length);
+        }, 4000); // Cambia cada 4 segundos para un ritmo más pausado
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const randomGameButton = document.querySelector(".random-game");
+
+        randomGameButton.addEventListener("click", function () {
+            const randomId = Math.floor(Math.random() * 10) + 1; // ID aleatorio entre 1 y 10
+            window.location.href = `/game/${randomId}`;
+        });
+    });
+
+
+
+    </script>
+</body>
+</html>
+
+
 <%- include('partials/footer.ejs')%>
