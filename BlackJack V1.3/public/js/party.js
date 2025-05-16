@@ -30,9 +30,10 @@ export class Jugador extends Participante {
     balance;
     apuesta;
 
-    constructor(id,nombre,balance) {
+    constructor(id,nombre,balance,socketId) {
         super();
         this.id = id;
+        this.socketId = socketId;
         this.nombre = nombre;
         this.tipo = "Player";   
         this.balance = balance;
@@ -215,9 +216,11 @@ export class Partida {
                     break;
 
                 case "Crupier":
-                    let index = Math.floor(Math.random() * (this.baraja.baraja.length - 1));
-                    this.jugadores[i].cartas.push(this.baraja.baraja[index]);
-                    this.baraja.baraja.splice(index, 1);
+                    for (let j = 0; j < 2; j++) {
+                        let index = Math.floor(Math.random() * (this.baraja.baraja.length - 1));
+                        this.jugadores[i].cartas.push(this.baraja.baraja[index]);
+                        this.baraja.baraja.splice(index, 1);
+                    }
                     break;
             }
         }

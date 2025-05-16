@@ -71,7 +71,7 @@ body {
 }
 .game-list .games {
   display: grid;
-  grid-template-columns: repeat(2, 0.2fr);
+  grid-template-columns: repeat(3, 0.2fr);
   gap: 20px;
   justify-content: center;
 }

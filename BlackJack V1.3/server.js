@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const games = {};
 const MAX_JUGADORES = 2;
-const INITIAL_GAMES = 1;
+let INITIAL_GAMES = 1;
 const sessionMiddleware = session({
     secret: 'session-secret-secure', 
     resave: false,                   
@@ -53,168 +53,105 @@ function generarDosPartidas(){
 
 
 io.on('connection', (socket) => {
-    
-    function obtenerBotonesSegunUsuario(usuario) {
-        if (!usuario) {
-            return ['btnLogin', 'btnRegister'];
-        }
-        return ['btnPedirCarta', 'btnPlantarse'];
+
+// Unir a la sala
+socket.on('joinRoom', (roomId) => {
+    const username = socket.handshake.session?.username;
+    if (!username) {
+        console.error('Sesión no encontrada en el socket.');
+        return socket.emit('error', 'Usuario no autenticado.');
     }
-    const usuario = socket.handshake.session?.username;
-    const botones = obtenerBotonesSegunUsuario(usuario);
-    socket.emit('mostrarBotones', botones);
 
+    socket.data.roomId = roomId;
+    socket.data.username = username;
+    let game = games[roomId];
 
+    if (!game) {
+        const crupier = new Crupier();
+        games[roomId] = new Partida([crupier], roomId);
+        game = games[roomId];
+    }
 
+    socket.join(roomId);
 
-    socket.on('joinRoom', (roomId) => {
-        const username = socket.handshake.session?.username;
-        if (!username) {
-            console.error('Sesión no encontrada en el socket.');
-            return socket.emit('error', 'Usuario no autenticado.');
-        }
-    
-        socket.data.roomId = roomId;
-        socket.data.username = username;
-    
-        let game = games[roomId];
-        
-        // Si no existe una partida para esta sala, crearla.
-        if (!game ) {
-            const crupier = new Crupier();
-            games[roomId] = new Partida([crupier],roomId);
-            game = games[roomId];
-        }
-    
-        socket.join(roomId);
-        
-        if (game.jugadores.some(player => player.nombre === username)) {
-            return socket.emit('error', 'Ya estás en la partida o como espectador.');
-        }
-        // Enviar el estado inicial del juego junto con el usuario actual.
-        socket.emit('gameState', { 
-            state: game.toJSON(),
-            currentUsername: username, // 'usuario' extraído de la sesión de handshake
-            turnoActual: game.turnoActual 
-        });
-    });
+    if (game.jugadores.some(player => player.nombre === username)) {
+        return socket.emit('error', 'Ya estás en la partida o como espectador.');
+    }
 
-    socket.on('gameStateRequest', ({ roomId }) => {
-        const game = games[roomId];
-        if (!game) return socket.emit('error', 'Partida no encontrada.');
-    
-        if (game.reiniciando) {
-            return socket.emit('error', 'La partida está reiniciándose, espera unos segundos.');
-        }
-    
-        socket.emit('gameState', { state: game.toJSON(), turnoActual: game.turnoActual });
-        socket.emit('info');
-    });
+    // Emitir el estado filtrado del juego
+            emitirGameState(io.to(roomId), game, socket.id,username);
+});
+
+// Solicitar el estado del juego
+socket.on('gameStateRequest', ({ roomId }) => {
+    const game = games[roomId];
+    if (!game) return socket.emit('error', 'Partida no encontrada.');
+
+    if (game.reiniciando) {
+        return socket.emit('error', 'La partida está reiniciándose, espera unos segundos.');
+    }
+
+            emitirGameState(io.to(roomId), game, socket.id,username);
+});
     
 
     
-    // Escuchar la acción de pedir carta.
-    socket.on('requestCard', ({ roomId }) => {
-        const game = games[roomId];
-        if (!game || game.reiniciando) return socket.emit('error', 'La partida está en proceso de reinicio.');
-        
-        const username = socket.data.username;  // Recupera el usuario autenticado.
-        // Buscar el índice del jugador en la partida usando el nombre de usuario.
-        const playerIndex = game.jugadores.findIndex(player => player.nombre === username);
-        if (playerIndex === -1) {
-            return socket.emit('error', 'No se encontró el jugador en la partida.');
-        }
-        game.pedirCarta(playerIndex);
-        if(game.jugadores[playerIndex].puntos > 21) {
-            io.to(roomId).emit('pasado', { playerIndex });
-            game.siguienteTurno();
-        }
+// Pedir carta
+socket.on('requestCard', ({ roomId }) => {
+    const game = games[roomId];
+    if (!game || game.reiniciando) return socket.emit('error', 'La partida está en proceso de reinicio.');
 
-        const quedanJugadores = game.jugadores.some(j => j.tipo === "Player" && !j.plant);
-        if (quedanJugadores) {
-            game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
-        } else {
-            io.to(roomId).emit('gameEnd');
-            game.jugarCrupier(playerIndex);
-        }
-        // Enviar el estado actualizado del juego a todos los clientes en la sala.
-        io.to(roomId).emit('gameState', { 
-            state: game.toJSON(),
-            turnoActual: game.turnoActual // Enviar el índice del jugador en turno
-        });
-        
-    });
+    const username = socket.data.username;
+    const playerIndex = game.jugadores.findIndex(player => player.nombre === username);
+    if (playerIndex === -1) return socket.emit('error', 'No se encontró el jugador en la partida.');
+
+    if (game.turnoActual !== playerIndex) return socket.emit('error', 'No es tu turno.');
+
+    game.pedirCarta(playerIndex);
+
+    // Actualizar el estado después de pedir carta
+            emitirGameState(io.to(roomId), game, socket.id,username);
+
+    // Si el jugador supera los 21 puntos, cambiar de turno sin emitir 'pasado'
+    if (game.jugadores[playerIndex].puntos > 21) {
+        game.siguienteTurno();
+        actualizarTurnoJuego(game, roomId);
+    }
+});
     
-// Escuchar la acción de plantarse.
+// Plantarse
 socket.on('plantarse', ({ roomId }) => {
     const game = games[roomId];
     if (!game) return;
 
     const username = socket.data.username;
     const playerIndex = game.jugadores.findIndex(player => player.nombre === username);
-    if (playerIndex === -1) {
-        return socket.emit('error', 'No se encontró tu jugador en la partida.');
-    }
+    if (playerIndex === -1) return socket.emit('error', 'No se encontró tu jugador en la partida.');
 
-    // El jugador se planta.
+    if (game.turnoActual !== playerIndex) return socket.emit('error', 'No es tu turno.');
+
     game.plantarse(playerIndex);
 
-    // Verificar si quedan jugadores activos antes de cambiar turno.
     const quedanJugadores = game.jugadores.some(j => j.tipo === "Player" && !j.plant);
     if (quedanJugadores) {
-        // Encontrar el siguiente jugador activo
         game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
     } else {
-        // Si todos los jugadores se han plantado, el crupier juega
         io.to(roomId).emit('gameEnd');
         game.jugarCrupier(playerIndex);
     }
 
-    // Emitir el nuevo estado del juego.
-    io.to(roomId).emit('gameState', { 
-        state: game.toJSON(),
-        turnoActual: game.turnoActual // Enviar el índice del jugador en turno.
-    });
-
+    // Verificar si la ronda debe finalizar
     verificarFinalRound(roomId, game);
+    actualizarTurnoJuego(game, roomId);
+            emitirGameState(io.to(roomId), game, socket.id,username);
 });
 
-
-
     
-    socket.on('pasado', ({ roomId, playerIndex }) => {
-        const game = games[roomId];
-        if (game) {
-            game.pasado(playerIndex);
-            io.to(roomId).emit('gameState', { 
-                state: game.toJSON(),
-                turnoActual: game.turnoActual // Enviar el índice del jugador en turno
-            });
-            
-        }
-    });
-    
-    socket.on('ganador', ({ roomId }) => {
-        const game = games[roomId];
-        if (game) {
-            game.ganadorPuntuacion();
-            io.to(roomId).emit('gameState', { 
-                state: game.toJSON(),
-                turnoActual: game.turnoActual // Enviar el índice del jugador en turno
-            });
-            
-        }
-    });
-    
-    socket.on('addPlayer', async ({ roomId }) => {
+socket.on('addPlayer', async ({ roomId, username, socketId  }) => {
     const game = games[roomId];
-    const username = socket.handshake.session.username;
 
     if (!game || !username) return socket.emit('error', 'Error al unirse a la partida.');
 
-    if (game.jugadores.some(player => player.nombre === username)) {
-        return socket.emit('error', 'Ya estás en la partida');
-    }
 
     // Si la partida ya ha empezado, no se permite unir más jugadores.
     if (game.empezada) {
@@ -223,7 +160,7 @@ socket.on('plantarse', ({ roomId }) => {
 
     if (game.jugadores.length < MAX_JUGADORES && !game.empezada) {
         try {
-            // ⚠️ La consulta a la base de datos DEBE ser asincrónica
+            // ⚠️ Consulta asincrónica para obtener datos del usuario
             const [rows] = await db.query('SELECT id, dinero FROM Usuarios WHERE nombre = ?', [username]);
 
             if (!rows.length) {
@@ -231,19 +168,20 @@ socket.on('plantarse', ({ roomId }) => {
             }
 
             const { id, dinero } = rows[0];
-            const dineroInt = parseInt(dinero,10)
-            const newPlayer = new Jugador(id, username, dineroInt);
+            const dineroInt = parseInt(dinero, 10);
+            const newPlayer = new Jugador(id, username, dineroInt, socket.id);
             game.jugadores.unshift(newPlayer);
             game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player");
-
+            emitirGameState(io.to(roomId), game, socket.id,username);
             const jugadoresHumanos = game.jugadores.filter(jugador => jugador.tipo === "Player");
             if (jugadoresHumanos.length >= 1 && !game.empezada) {                
                 game.countDown = true;
-                let idPartida = await iniciarCuentaAtras(roomId, game,db);
+                let idPartida = await iniciarCuentaAtras(roomId, game, db,io);
                 game.idPartida = idPartida;
             }
 
-            io.to(roomId).emit('gameState', { state: game.toJSON(), turnoActual: game.turnoActual });
+            // Emitir el estado del juego **filtrado**
+            emitirGameState(io.to(roomId), game, socket.id,username);
 
         } catch (error) {
             console.error('Error al obtener usuario de la base de datos:', error);
@@ -251,107 +189,258 @@ socket.on('plantarse', ({ roomId }) => {
         }
     } else {
         socket.emit('error', 'La partida está llena.');
-        maxGames++;
+        INITIAL_GAMES++;
     }
-    socket.emit('info');
+    
 });
 
     
-// Función que inicia la cuenta regresiva de 10 segundos
-async function iniciarCuentaAtras(roomId, game, db) {
-        return new Promise(async (resolve, reject) => {
-    // Bloquear acciones como apuestas, pedir carta, etc.
-    io.to(roomId).emit("bloquearAcciones", true);
-    io.to(roomId).emit("iniciarCuenta", 10); // Emitir el evento de cuenta atrás
-    setTimeout(async () => {
-        try {
-            // Marcar la partida como empezada y desbloquear acciones
-            game.empezada = true;
-            
-            io.to(roomId).emit("bloquearAcciones", false);
-            game.repartirCartas();
-            io.to(roomId).emit("gameState", { state: game.toJSON(), turnoActual: game.turnoActual });
-            io.to(roomId).emit("cuentaFinalizada", "El tiempo para unirse ha finalizado.");
-
-            // **1. Insertar la partida en la tabla `Partida`**
-            const [resultadoPartida] = await db.execute(
-                `INSERT INTO Partida (num_jugadores, puntos_crupier, puntos_jugador_1, puntos_jugador_2, puntos_jugador_3, ganador, bote, fecha_partida) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())`,
-                [
-                    game.jugadores.length,
-                    game.jugadores[game.jugadores.length - 1]?.puntos ?? 0, // Crupier (último jugador)
-                    game.jugadores[0]?.puntos ?? 0, // Primer jugador (si existe)
-                    game.jugadores[1]?.puntos ?? 0, // Segundo jugador (si existe)
-                    game.jugadores[2]?.puntos ?? 0, // Tercer jugador (si existe)
-                    "Pendiente", // Se actualizará al final
-                    game.bote ?? 0
-                ]
-            );
-
-
-            const idPartida = resultadoPartida.insertId; // Obtener el ID de la partida insertada
-            game.idPartida = idPartida; // Guardar el ID de la partida en el objeto `game`
-            
-            // **2. Generar la URL única para la partida**
-            const urlPartida = `game/${roomId}`;
-
-            // **3. Actualizar la tabla `Partida` para agregar la URL**
-            await db.execute(
-                `UPDATE Partida SET url_partida = ? WHERE id = ?`,
-                [urlPartida, idPartida]
-            );
-
-            const barajaString = JSON.stringify(game.baraja);
-            await db.execute(
-                `INSERT INTO Baraja (idPartida, baraja, fecha_partida) VALUES (?, ?, CURDATE())`,
-                [idPartida, barajaString]
-            );
-
-            // **4. Registrar cada jugador en `ParticipaEn`**
-            for (const jugador of game.jugadores.slice(0, game.jugadores.length - 1)) { // Excluye al crupier
-                await db.execute(
-                    `INSERT INTO ParticipaEn (idUsuario, idPartida, puntos, estado, apuesta, ganador, fecha_partida) 
-                    VALUES (?, ?, ?, ?, ?, ?, CURDATE())`,
-                    [
-                        jugador.id ?? null,
-                        idPartida,
-                        jugador.puntos ?? 0,
-                        "Jugando",
-                        jugador.apuesta ?? 0,
-                        "Pendiente"
-                    ]
-                );
-            }
-
-            // **5. Obtener o registrar el crupier**
-            let idCrupier;
-            const [nuevoCrupier] = await db.execute(`INSERT INTO Crupier (derrotas, victorias) VALUES (0, 0)`);
-            
-            idCrupier = nuevoCrupier.insertId;
-            game.idCrupier = idCrupier;
-            // **6. Registrar el crupier en `ParticipaEnCrupier`**
-            await db.execute(
-                `INSERT INTO ParticipaEnCrupier (idCrupier, idPartida, puntos, estado, ganador, fecha_partida) 
-                VALUES (?, ?, ?, ?, ?, CURDATE())`,
-                [
-                    idCrupier,
-                    idPartida,
-                    game.jugadores[game.jugadores.length - 1]?.puntos ?? 0, // Crupier siempre es el último
-                    "Jugando",
-                    "Pendiente"
-                ]
-            );
-
-            console.log("✔ Registro de partida y jugadores completado.");
-            console.log(`🔗 URL de la partida creada: ${urlPartida}`);
-            resolve(idPartida); // Resolver la promesa con el ID de la partida
-        } catch (error) {
-            console.error("❌ Error al registrar la partida:", error);
-            io.to(roomId).emit("error", "Error al registrar la partida en la base de datos.");
+function mostrarFormularioApuesta(roomId, game, io) {
+    console.log("🔹 Enviando formulario de apuesta a jugadores sin apuesta...");
+    game.jugadores.forEach(jugador => {
+        if (jugador.tipo !== "Crupier" && jugador.apuesta === 0) {
+            console.log(`Enviando evento a: ${jugador.nombre}`);
+            io.to(jugador.socketId).emit("mostrarFormularioApuesta");
         }
-    }, 10000);
     });
 }
+
+
+
+    
+socket.on('realizarApuesta', async ({ roomId, monto }) => {
+    const game = games[roomId];
+    if (!game) return socket.emit('error', 'Partida no encontrada.');
+
+    const username = socket.data.username;
+    const playerIndex = game.jugadores.findIndex(player => player.nombre === username);
+    if (playerIndex === -1) return socket.emit('error', 'Jugador no encontrado.');
+
+    try {
+        // Obtener el dinero actual del usuario de forma segura
+        const [rows] = await db.query('SELECT dinero FROM Usuarios WHERE nombre = ?', [username]);
+
+        if (!rows.length) return socket.emit('error', 'Usuario no encontrado en la base de datos.');
+
+        let dineroActual = parseInt(rows[0].dinero, 10);
+
+        // Verificar si el usuario tiene suficiente dinero para apostar
+        if (monto > dineroActual) return socket.emit('error', 'No tienes suficiente dinero para realizar esta apuesta.');
+
+        // Registrar la apuesta en el juego
+        game.realizarApuesta(playerIndex, monto);
+
+        // Restar el dinero del usuario en la base de datos
+        dineroActual -= monto;
+        await db.execute('UPDATE Usuarios SET dinero = ? WHERE nombre = ?', [dineroActual, username]);
+
+        // Informar al jugador sobre su nuevo balance
+        socket.emit('apuestaRealizada', { balance: dineroActual });
+
+        // Emitir estado del juego con la información filtrada
+            emitirGameState(io.to(roomId), game, socket.id,username);
+
+    } catch (err) {
+        console.error('Error al procesar la apuesta:', err);
+        socket.emit('error', { message: 'Error interno al procesar la apuesta.' });
+    }
+});
+
+
+
+// Manejo de desconexión
+socket.on('disconnect', () => {
+    const roomId = socket.data.roomId;
+    if (!roomId || !games[roomId]) return;
+
+    const game = games[roomId];
+    const username = socket.data.username;
+    if (!username) return;
+
+    game.jugadores = game.jugadores.filter(player => player.nombre !== username);
+
+    io.to(roomId).emit('playerDisconnected', { username });
+
+    if (game.jugadores.length === 1 && game.jugadores[0].tipo === 'Crupier') {
+        delete games[roomId];
+        io.to(roomId).emit('gameEnd');
+    } else {
+            emitirGameState(io.to(roomId), game, socket.id,username);
+    }
+});
+
+    
+    // Manejo de mensajes de chat.
+    socket.on('chat message', ({ roomId, message }) => {
+        io.to(roomId).emit('chat message', message);
+    });
+
+
+
+
+/*------------------------FUNCIONES------------------------*/
+    // Función para emitir el estado del juego filtrado
+function emitirGameState(emisor, game, socketId, username) {
+    const filteredGameState = game.toJSON();
+
+    filteredGameState.jugadores = game.jugadores.map(jugador => ({
+        nombre: jugador.nombre,
+        tipo: jugador.tipo,
+        socketId: jugador.socketId || null, // ID del socket del jugador
+        apuesta: jugador.apuesta,
+        cartas: jugador.cartas.map((carta, index) => {
+            // Si el jugador actual coincide con el socket ID, muestra sus cartas
+            if (jugador.socketId === socketId || jugador.nombre === username) {
+                return carta;
+            }
+            // Si el crupier, solo muestra la primera carta
+            else if (jugador.tipo === "Crupier" && index === 0) {
+                return carta;
+            }
+            // Oculta las cartas de los demás jugadores
+            else {
+                return { palo: "?", numero: "?", destapada: false };
+            }
+        })
+    }));
+
+    emisor.emit("gameState", {
+        state: filteredGameState,
+        turnoActual: game.turnoActual,
+        currentUsername: username,
+        currentSocketId: socketId
+    });
+}
+
+
+
+    // Función para actualizar el turno de juego
+    function actualizarTurnoJuego(game, roomId) {
+        const quedanJugadores = game.jugadores.some(j => j.tipo === "Player" && !j.plant);
+        if (quedanJugadores) {
+            game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
+        } else {
+            io.to(roomId).emit('gameEnd');
+            game.jugarCrupier(game.turnoActual);
+        }
+        verificarFinalRound(roomId, game);
+        emitirGameState(io.to(roomId), game, socket.id, game.currentUsername);
+    }
+
+    // Función que inicia la cuenta regresiva de 10 segundos
+async function iniciarCuentaAtras(roomId, game, db, io) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            io.to(roomId).emit("bloquearAcciones", true);
+            io.to(roomId).emit("iniciarCuenta", 10); // Primera cuenta atrás (unirse)
+
+            setTimeout(async () => {
+                io.to(roomId).emit("cuentaFinalizada", "El tiempo para unirse ha finalizado. Tienes 10 segundos para apostar.");
+                io.to(roomId).emit("iniciarCuenta", 20); // Segunda cuenta atrás (apostar)
+
+                // 🔹 Aquí enviamos el formulario de apuesta a quienes aún no han apostado
+                mostrarFormularioApuesta(roomId, game, io);
+
+                setTimeout(async () => {
+                    // 🔹 Expulsar jugadores que no apostaron
+                    game.jugadores = game.jugadores.filter(jugador => jugador.tipo === "Crupier" || jugador.apuesta > 0);
+
+                    if (game.jugadores.length > 1) {
+                        game.empezada = true;
+                        io.to(roomId).emit("bloquearAcciones", false);
+                        game.repartirCartas();
+                        emitirGameState(io.to(roomId), game, socket.id, game.currentUsername);
+                        io.to(roomId).emit("cuentaFinalizada", "La partida ha comenzado.");
+
+                        // 🔹 **1. Insertar la partida en la tabla `Partida`**
+                        const [resultadoPartida] = await db.execute(
+                            `INSERT INTO Partida (num_jugadores, puntos_crupier, puntos_jugador_1, puntos_jugador_2, puntos_jugador_3, ganador, bote, fecha_partida) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                            [
+                                game.jugadores.length,
+                                game.jugadores[game.jugadores.length - 1]?.puntos ?? 0, // Crupier (último jugador)
+                                game.jugadores[0]?.puntos ?? 0, // Primer jugador (si existe)
+                                game.jugadores[1]?.puntos ?? 0, // Segundo jugador (si existe)
+                                game.jugadores[2]?.puntos ?? 0, // Tercer jugador (si existe)
+                                "Pendiente", // Se actualizará al final
+                                game.bote ?? 0
+                            ]
+                        );
+
+                        // 🔹 Obtener el ID de la partida insertada
+                        const idPartida = resultadoPartida.insertId;
+                        game.idPartida = idPartida;
+
+                        // 🔹 **2. Generar la URL única para la partida**
+                        const urlPartida = `game/${roomId}`;
+
+                        // 🔹 **3. Actualizar la tabla `Partida` para agregar la URL**
+                        await db.execute(
+                            `UPDATE Partida SET url_partida = ? WHERE id = ?`,
+                            [urlPartida, idPartida]
+                        );
+
+
+                        const barajaString = JSON.stringify(game.baraja);
+                        await db.execute(
+                            `INSERT INTO Baraja (idPartida, baraja, fecha_partida) VALUES (?, ?, CURDATE())`,
+                            [idPartida, barajaString]
+                        );
+
+
+
+                        // **4. Registrar cada jugador en `ParticipaEn`**
+                        for (const jugador of game.jugadores.slice(0, game.jugadores.length - 1)) { // Excluye al crupier
+                            await db.execute(
+                                `INSERT INTO ParticipaEn (idUsuario, idPartida, puntos, estado, apuesta, ganador, fecha_partida) 
+                                VALUES (?, ?, ?, ?, ?, ?, CURDATE())`,
+                                [
+                                    jugador.id ?? null,
+                                    idPartida,
+                                    jugador.puntos ?? 0,
+                                    "Jugando",
+                                    jugador.apuesta ?? 0,
+                                    "Pendiente"
+                                ]
+                            )};
+
+
+                            let idCrupier;
+                            const [nuevoCrupier] = await db.execute(`INSERT INTO Crupier (derrotas, victorias) VALUES (0, 0)`);
+                            
+                            idCrupier = nuevoCrupier.insertId;
+                            game.idCrupier = idCrupier;
+                            // **6. Registrar el crupier en `ParticipaEnCrupier`**
+                            await db.execute(
+                                `INSERT INTO ParticipaEnCrupier (idCrupier, idPartida, puntos, estado, ganador, fecha_partida) 
+                                VALUES (?, ?, ?, ?, ?, CURDATE())`,
+                                [
+                                    idCrupier,
+                                    idPartida,
+                                    game.jugadores[game.jugadores.length - 1]?.puntos ?? 0, // Crupier siempre es el último
+                                    "Jugando",
+                                    "Pendiente"
+                                ]
+                            );
+                        resolve(idPartida);
+                    } else {
+                        io.to(roomId).emit("error", "No se ha alcanzado el número mínimo de jugadores con apuestas. Partida cancelada.");
+                        resolve(null);
+                    }
+                }, 10000); // Fin de la cuenta atrás para apostar
+                
+            }, 10000); // Fin de la cuenta atrás para unirse
+        } catch (error) {
+            console.error("❌ Error al registrar la partida en la base de datos:", error);
+            io.to(roomId).emit("error", "Error al registrar la partida en la base de datos.");
+            reject(error);
+        }
+    });
+}
+
+
+
+
 
     function verificarFinalRound(roomId, game) {
         // Verificar si todos los jugadores "Player" están plantados
@@ -443,7 +532,7 @@ async function iniciarCuentaAtras(roomId, game, db) {
         );
 
         // **5. Emitir estado del juego**
-        io.to(roomId).emit('gameState', { state: game.toJSON(), turnoActual: game.turnoActual });
+        emitirGameState(io.to(roomId), game, socket.id, game.currentUsername);
 
         // **6. Notificar fin de la ronda**
         io.to(roomId).emit('gameEnd');
@@ -462,82 +551,16 @@ async function iniciarCuentaAtras(roomId, game, db) {
         io.to(roomId).emit("error", "Hubo un problema al finalizar la partida.");
     }
 }
-
-    
-    socket.on('realizarApuesta', async ({ roomId, monto }) => {
-    const game = games[roomId];
-    if (!game) return socket.emit('error', 'Partida no encontrada.');
-
-    const username = socket.data.username;
-    const playerIndex = game.jugadores.findIndex(player => player.nombre === username);
-    if (playerIndex === -1) {
-        return socket.emit('error', 'Jugador no encontrado.');
-    }
-
-    try {
-        // Obtener el dinero actual del usuario
-        const [rows] = await db.query('SELECT dinero FROM Usuarios WHERE nombre = ?', [username]);
-
-        if (rows.length === 0) {
-            return socket.emit('error', 'Usuario no encontrado en la base de datos.');
+    // Mostrar botones según el estado de la sesión
+    function obtenerBotonesSegunUsuario(usuario) {
+        if (!usuario) {
+            return ['btnLogin', 'btnRegister'];
         }
-
-        let dineroActual = parseInt(rows[0].dinero, 10);
-
-        // Verificar si el usuario tiene suficiente dinero para apostar
-        if (monto > dineroActual) {
-            return socket.emit('error', 'No tienes suficiente dinero para realizar esta apuesta.');
-        }
-
-        // Realizar la apuesta en el juego
-        game.realizarApuesta(playerIndex, monto);
-
-        // Restar el dinero de la base de datos
-        dineroActual -= monto;
-        await db.execute('UPDATE Usuarios SET dinero = ? WHERE nombre = ?', [dineroActual, username]);
-
-        // Actualizar el estado del juego y enviar respuesta al jugador
-        socket.emit('apuestaRealizada', { balance: dineroActual });
-        io.to(roomId).emit('gameState', { 
-            state: game.toJSON(),
-            turnoActual: game.turnoActual
-        });
-
-    } catch (err) {
-        console.error('Error al procesar la apuesta:', err);
-        socket.emit('error', { message: 'Error interno al procesar la apuesta.' });
+        return ['btnPedirCarta', 'btnPlantarse'];
     }
-});
-
-
-
-    socket.on('disconnect', () => {
-    
-        const roomId = socket.data.roomId;
-        if (!roomId || !games[roomId]) return;
-    
-        const game = games[roomId];
-        const username = socket.data.username;
-        if (!username) return;
-    
-        // Eliminar al jugador de la partida.
-        game.jugadores = game.jugadores.filter(player => player.nombre !== username);
-    
-        // Notificar a los demás jugadores.
-        io.to(roomId).emit('playerDisconnected', { username });
-    
-        // Enviar el estado actualizado del juego.
-        io.to(roomId).emit('gameState', { 
-            state: game.toJSON(),
-            turnoActual: game.turnoActual // Enviar el índice del jugador en turno
-        });
-        
-    });
-    
-    // Manejo de mensajes de chat.
-    socket.on('chat message', ({ roomId, message }) => {
-        io.to(roomId).emit('chat message', message);
-    });
+    const usuario = socket.handshake.session?.username;
+    const botones = obtenerBotonesSegunUsuario(usuario);
+    socket.emit('mostrarBotones', botones);
 });
 
 

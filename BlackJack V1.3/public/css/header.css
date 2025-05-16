@@ -10,7 +10,6 @@
   align-items: center;
   justify-content: space-between;
   color: white;
-  z-index: 1000;
   box-sizing: border-box;
 }
 .navbar .logo {
@@ -21,8 +20,8 @@
   font-weight: bold;
 }
 .navbar .logo img {
-  width: 70px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   filter: drop-shadow(0 10px 3px rgba(0, 0, 0, 0.9));
 }
 .navbar .nav-links {
@@ -31,7 +30,7 @@
   gap: 20px;
   flex-wrap: nowrap;
   justify-content: flex-end;
-  width: 100%;
+  width: 70%;
   padding: 0 15px;
 }
 .navbar .nav-links li a {
