@@ -1,0 +1,141 @@
+// Variables de colores
+$primary-color: #ff5c5c;
+$primary-hover: #e04e4e;
+$background-color: #f8f8f8;
+$text-color: #333;
+$text-light: #666;
+$dialog-background: white;
+$overlay-color: rgba(0, 0, 0, 0.3);
+$success-color: #28a745;
+$success-hover: #218838;
+$cancel-color: #6c757d;
+$cancel-hover: #5a6268;
+
+// Estilos generales
+body {
+    font-family: Arial, sans-serif;
+    background-color: $background-color;
+    margin: 0;
+    padding: 0;
+}
+
+// Contenedor del perfil
+.profile-container {
+    max-width: 400px;
+    margin: 50px auto;
+    background-color: white;
+    padding: 20px;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    text-align: center;
+
+    .profile-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+    }
+
+    .profile-name {
+        font-size: 24px;
+        color: $text-color;
+        margin-bottom: 10px;
+    }
+
+    .profile-info {
+        font-size: 16px;
+        color: $text-light;
+        margin: 5px 0;
+    }
+
+    .edit-btn {
+        background-color: $primary-color;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+
+        &:hover {
+            background-color: $primary-hover;
+        }
+    }
+}
+
+// Overlay para el diálogo
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: $overlay-color;
+    
+}
+
+// Diálogo de edición
+.dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: $dialog-background;
+    padding: 20px;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.3);
+    border-radius: 10px;
+    width: 300px;
+    text-align: center;
+    z-index: 1;
+    .dialog-title {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+
+    .edit-form {
+        .form-label {
+            display: block;
+            font-size: 16px;
+            margin: 5px 0;
+            text-align: left;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            background-color: $success-color;
+            color: white;
+
+            &:hover {
+                background-color: $success-hover;
+            }
+        }
+
+        .form-cancel {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            background-color: $cancel-color;
+            color: white;
+
+            &:hover {
+                background-color: $cancel-hover;
+            }
+        }
+    }
+}

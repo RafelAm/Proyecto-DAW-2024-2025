@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -35,18 +32,27 @@ let gameStateGlobal;
 let currentUsername = "";
 // Actualizar el estado del juego
 socket.on("gameState", (gameState) => {
-      
-      if (!gameState || !gameState.state) {
+    if (!gameState || !gameState.state) {
         console.error("Error: gameState no está definido correctamente.");
         return;
     }
-    gameStateGlobal = gameState; // Guardamos el estado del juego globalmente
+
+    gameStateGlobal = gameState;
     currentSocketId = gameState.currentSocketId;
     currentUsername = gameState.currentUsername;
 
     renderGame(gameState);
     renderizarBotonesInicio(currentUsername);
+
+    // Volver a renderizar botones si están en gameState
+    if (gameState.botonesConfig && gameState.botonesConfig.length > 0) {
+        globalBotonesConfig = gameState.botonesConfig;
+        if (botonesContainerGlobal) {
+            renderizarBotones(globalBotonesConfig, botonesContainerGlobal, false);
+        }
+    }
 });
+
 
 
 
@@ -85,7 +91,7 @@ socket.on("mostrarFormularioApuesta", () => {
     if(gameStateGlobal.currentUsername == currentUsername && gameStateGlobal.state.jugadores){
         const jugadorActual = gameStateGlobal.state.jugadores.find(j => j.nombre === currentUsername);
         if (jugadorActual && jugadorActual.apuesta === 0) {
-            gestionarFormularioApuesta(currentUsername);
+            renderizarFormularioApuesta(currentUsername);
         } else {
             console.warn("Jugador no encontrado en gameStateGlobal:", currentUsername);
         }
@@ -110,67 +116,71 @@ socket.on("mostrarBotones", (botonesConfig) => {
 
 
 
-// Renderizar el formulario de apuesta
+let apuestaActual = 0;
+let fichasApostadas = [];
+
 function renderizarFormularioApuesta(jugador) {
-    // Verificar si ya existe el contenedor de apuesta
     let apuestaContainer = document.getElementById("apuestaContainer");
-    
     if (!apuestaContainer) {
         apuestaContainer = document.createElement("div");
         apuestaContainer.id = "apuestaContainer";
         document.body.appendChild(apuestaContainer);
     }
-
-    // Forzar visibilidad del formulario
     apuestaContainer.style.display = "block";
 
     apuestaContainer.innerHTML = `
-        <form id="betForm">
-            <input type="number" id="betAmount" placeholder="Ingrese su apuesta" required>
-            <button type="submit">Apostar</button>
-        </form>
+        <div id="fichasContainer">
+            <button class="ficha" data-valor="5">5</button>
+            <button class="ficha" data-valor="10">10</button>
+            <button class="ficha" data-valor="20">20</button>
+            <button class="ficha" data-valor="50">50</button>
+            <button class="ficha" data-valor="100">100</button>
+        </div>
+        <div id="apuestaResumen"></div>
+        <button id="resetApuesta">Resetear</button>
+        <button id="enviarApuesta">Apostar</button>
     `;
 
-    // 💡 Evitar duplicados en event listeners eliminando eventos anteriores
-    const betForm = document.getElementById("betForm");
-    betForm?.removeEventListener("submit", handleBetSubmit);
-    
-    // Agregar event listener con el jugador correctamente definido
-    betForm?.addEventListener("submit", (e) => handleBetSubmit(e, jugador), { once: true });
-}
+    apuestaActual = 0;
+    fichasApostadas = [];
+    actualizarResumenApuesta();
 
+    document.querySelectorAll(".ficha").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const valor = parseInt(btn.dataset.valor, 10);
+            apuestaActual += valor;
+            fichasApostadas.push(valor);
+            actualizarResumenApuesta();
+        });
+    });
 
+    document.getElementById("resetApuesta").onclick = () => {
+        apuestaActual = 0;
+        fichasApostadas = [];
+        actualizarResumenApuesta();
+    };
 
-function gestionarFormularioApuesta(jugador) {
-    renderizarFormularioApuesta(jugador)
-
-    // 🔹 Si después de 10 segundos no ha apostado, lo eliminamos
-    setTimeout(() => {
-        if (jugador.apuesta === 0) {
-            socket.emit("expulsarJugador", { roomId: jugador.roomId, socketId: jugador.socketId });
+    document.getElementById("enviarApuesta").onclick = () => {
+        if (apuestaActual > 0) {
+            socket.emit("realizarApuesta", { roomId, monto: apuestaActual, fichas: fichasApostadas, socketId: currentSocketId });
             apuestaContainer.style.display = "none";
         }
-    }, 10000);
+    };
 }
 
-
-
-
-  // Manejar el envío del formulario de apuesta
-function handleBetSubmit(e, usuario) {
-    e.preventDefault();
-    const monto = Number(document.getElementById("betAmount").value);
-
-    if (monto > 0) {
-        // Emitimos la apuesta primero
-        socket.emit("realizarApuesta", { roomId, monto, socketId: currentSocketId });
-
-        // Ahora sí agregamos al jugador
-        socket.emit("addPlayer", { roomId, username: usuario, socketId: currentSocketId });
-
-        // Ocultar el formulario después de apostar
-        document.getElementById("apuestaContainer").style.display = "none";
-    } 
+function actualizarResumenApuesta() {
+    const resumen = document.getElementById("apuestaResumen");
+    if (!resumen) return;
+    if (fichasApostadas.length === 0) {
+        resumen.innerHTML = "Apuesta actual: 0";
+    } else {
+        const conteo = {};
+        fichasApostadas.forEach(f => conteo[f] = (conteo[f] || 0) + 1);
+        let texto = Object.entries(conteo)
+            .map(([valor, cantidad]) => `${cantidad} ficha${cantidad > 1 ? 's' : ''} de ${valor}`)
+            .join(", ");
+        resumen.innerHTML = `Apuesta actual: ${apuestaActual} (${texto})`;
+    }
 }
 
 // Renderizar el juego
@@ -192,7 +202,17 @@ function renderGame(gameState) {
                     <img src="${jugador.tipo === 'Crupier' ? '/images/dealer.png' : '/images/default-user.png'}" alt="${jugador.tipo}" class="img-${jugador.tipo}">
                 </div>
                 <p class="puntos">Puntos: ${jugador.puntaje}</p>
-                ${jugador.tipo === "Player" ? `<p class="apuesta">Apuesta: ${jugador.apuesta} monedas</p>` : ""}
+                ${jugador.tipo === "Player" ? `
+    <p class="apuesta">Apuesta: ${jugador.apuesta} monedas</p>
+    ${jugador.fichasApostadas && jugador.fichasApostadas.length > 0
+        ? `<p class="fichas">Fichas: ${
+            Object.entries(jugador.fichasApostadas.reduce((acc, f) => {
+                acc[f] = (acc[f] || 0) + 1; return acc;
+            }, {})).map(([valor, cantidad]) => `${cantidad}x${valor}`).join(", ")
+        }</p>`
+        : ""
+    }
+` : ""}
             </div>
             <div class="cartas"></div>
         `;
@@ -300,7 +320,10 @@ function renderizarBotonesInicio(usuario) {
 
         container.appendChild(button);
     });
-    }
+    }else{
+      if(container.style.display === "none"){
+        container.style.display = "block"; // Asegúrate de que el contenedor esté visible
+      }    }
 
 
 }
@@ -339,42 +362,51 @@ function renderTotalApuestas(totalApuestas) {
     }
       // Escuchar el evento de iniciar cuenta desde el servidor
       socket.on("iniciarCuenta", (duracion) => {
-        // Crea o consigue el elemento donde mostrar la cuenta atrás
         let timerDisplay = document.getElementById("timerDisplay");
         if (!timerDisplay) {
-          timerDisplay = document.createElement("div");
-          timerDisplay.id = "timerDisplay";
-
-          document.body.appendChild(timerDisplay);
+            timerDisplay = document.createElement("div");
+            timerDisplay.id = "timerDisplay";
+            document.body.appendChild(timerDisplay);
         }
 
-        // Inicializa el contador
-        let segundosRestantes = duracion;
-        timerDisplay.innerHTML = `Tiempo restante para unirse: ${segundosRestantes} segundos.`;
+        let fase = (duracion === 20) ? "apostar" : "unirse";
+        let mensaje = (fase === "apostar")
+            ? "Tiempo restante para apostar: "
+            : "Tiempo restante para unirse: ";
 
-        const countdown = setInterval(() => {
-          segundosRestantes--;
-          if (segundosRestantes <= 0) {
-            clearInterval(countdown);
-            timerDisplay.innerHTML = "El tiempo para unirse ha finalizado.";
-            setTimeout(() => {
-              timerDisplay.remove();
-            }, 2000); // Elimina el mensaje después de 5 segundos
-          } else {
-            timerDisplay.innerHTML = `Tiempo restante para unirse: ${segundosRestantes} segundos.`;
-          }
+        let segundosRestantes = duracion;
+        timerDisplay.innerHTML = `${mensaje}${segundosRestantes} segundos.`;
+
+        // Limpia cualquier countdown anterior
+        if (window.countdownInterval) clearInterval(window.countdownInterval);
+
+        window.countdownInterval = setInterval(() => {
+            segundosRestantes--;
+            if (segundosRestantes <= 0) {
+                clearInterval(window.countdownInterval);
+                // Solo actualiza el mensaje, NO elimines el timerDisplay aquí
+                timerDisplay.innerHTML = (fase === "apostar")
+                    ? "El tiempo para apostar ha finalizado."
+                    : "El tiempo para unirse ha finalizado.";
+            } else {
+                timerDisplay.innerHTML = `${mensaje}${segundosRestantes} segundos.`;
+            }
         }, 1000);
-      });
+    });
 
       socket.on("cuentaFinalizada", (mensaje) => {
         let timerDisplay = document.getElementById("timerDisplay");
         if (!timerDisplay) {
-          timerDisplay = document.createElement("div");
-          timerDisplay.id = "timerDisplay";
-          document.body.appendChild(timerDisplay);
+            timerDisplay = document.createElement("div");
+            timerDisplay.id = "timerDisplay";
+            document.body.appendChild(timerDisplay);
         }
         timerDisplay.innerHTML = mensaje;
-      });
+        // Elimina el temporizador después de 2 segundos
+        setTimeout(() => {
+            if (timerDisplay) timerDisplay.remove();
+        }, 2000);
+    });
 
 socket.on("bloquearAcciones", (bloquear) => {
     // Bloquear botones de acción
@@ -417,6 +449,13 @@ function gestionarBotonesInterfaz(gameState) {
 
 }
 
+    socket.on("mostrarBotonUnirse", () => {
+    renderizarBotonesInicio(currentUsername);
+});
+
+socket.on("info", (msg) => {
+    alert(msg); 
+});
     </script>
   </body>
 </html>

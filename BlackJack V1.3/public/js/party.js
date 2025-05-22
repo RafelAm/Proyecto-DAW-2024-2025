@@ -1,4 +1,3 @@
-
 class  Participante{
     puntaje;
     cartas;
@@ -25,10 +24,12 @@ export class Crupier extends Participante{
 
 export class Jugador extends Participante {
     id;
+    socketId;
     nombre;
     tipo; 
     balance;
     apuesta;
+    fichasApostadas; // <-- Añade esto
 
     constructor(id,nombre,balance,socketId) {
         super();
@@ -38,6 +39,7 @@ export class Jugador extends Participante {
         this.tipo = "Player";   
         this.balance = balance;
         this.apuesta = 0;
+        this.fichasApostadas = []; // <-- Añade esto
     }
 }
 
@@ -78,77 +80,28 @@ class Baraja{
 
 export class Partida {
     constructor(jugadores, ruta) {
-        this.ruta = ruta;
         this.idPartida = 0;
         this.idCrupier = 0;
-        this.name = "New Game";
+        this.ruta = ruta;
+        this.jugadores = jugadores;
         this.baraja = new Baraja();
         this.plantados = 0;
-        this.jugadores = jugadores;
-        this.empezada = false;
-        this.reiniciada = false;
-        this.reiniciando = false;
         this.totalApuestas = 0;
         this.turnoActual = 0;
         this.countDown = false;
+        this.empezada = false;
+        this.reiniciada = false;
+        this.reiniciando = false;
+
     }
-
-    iniciarNuevoJuego() {
-        if (this.reiniciando) return; 
-        this.reiniciando = true;
-        console.log("Esperando 20 segundos para reiniciar...");
-
-        setTimeout(() => {
-            console.log("Reiniciando partida...");
-
-            this.jugadores.forEach(player => {
-                player.puntaje = 0;
-                player.cartas = [];
-                player.plant = false;
-                player.apuesta = 0;
-            });
-            this.ruta = this.ruta;
-            this.idPartida = 0;
-            this.idCrupier = 0;
-            this.baraja = new Baraja();
-            this.plantados = 0;
-            this.empezada = false;
-            this.reiniciada = true;
-            this.totalApuestas = 0;
-            this.turnoActual = 0;
-
-            this.reiniciando = false;  // ✅ Finaliza el proceso
-        }, 20000);
-    }
-    
-    
-
-
-    siguienteTurno() {
-        this.turnoActual = this.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
-    
-        if (this.turnoActual === -1) {
-            this.verificarSiCrupierDebeJugar();
-        }
-    }
-    
-    
-
-    verificarSiCrupierDebeJugar() {
-        const todosPlantados = this.jugadores.every(j => j.tipo !== "Crupier" && j.plant);
-        if (todosPlantados) {
-            this.jugarCrupier();
-        }
-    }
-
-    
-    
 
     toJSON() {
         if (this.plantados === this.jugadores.length - 1 && this.plantados >= 1) {
             this.iniciarNuevoJuego();
             return {
-
+                idPartida: this.idPartida,
+                idCrupier: this.idCrupier,
+                ruta: this.ruta,
                 jugadores: this.jugadores.map(j => ({
                     nombre: j.nombre,
                     tipo: j.tipo,
@@ -158,21 +111,20 @@ export class Partida {
                     balance: j.balance,
                     apuesta: 0
                 })),
-                ruta: this.ruta,
-                idPartida: this.idPartida,
-                idCrupier: this.idCrupier,
                 baraja: this.baraja.baraja,
                 plantados: this.plantados,
-                empezada: this.empezada,
-                ganadores: this.ganadorPuntuacion(),
-                reiniciada: true,
                 totalApuestas: 0,
                 turnoActual: 0,
+                empezada: this.empezada,
+                ganadores: this.ganadorPuntuacion(),
+                reiniciada: this.reiniciada,
                 countDown: this.countDown
             };
         } else {
             return {
-
+                idPartida: this.idPartida,
+                idCrupier: this.idCrupier,
+                ruta: this.ruta,
                 jugadores: this.jugadores.map(j => ({
                     nombre: j.nombre,
                     tipo: j.tipo,
@@ -182,20 +134,46 @@ export class Partida {
                     balance: j.balance,
                     apuesta: j.apuesta
                 })),
-                ruta: this.ruta,
-                idPartida: this.idPartida,
-                idCrupier: this.idCrupier,
                 baraja: this.baraja.baraja,
                 plantados: this.plantados,
-                empezada: this.empezada,
-                ganadores: "",
-                reiniciada: false,
                 totalApuestas: this.totalApuestas,
                 turnoActual: this.turnoActual,
+                empezada: this.empezada,
+                reiniciada: this.reiniciada,
                 countDown: this.countDown
             };
         }
     }
+
+
+    iniciarNuevoJuego() {
+        if (this.reiniciando) return; 
+        this.reiniciando = true;
+        console.log("Esperando 20 segundos para reiniciar...");
+
+        setTimeout(() => {
+            console.log("Reiniciando partida...");
+            this.idPartida = 0;
+            this.idCrupier = 0;
+            this.ruta = this.ruta;
+            this.jugadores.forEach(player => {
+                player.puntaje = 0;
+                player.cartas = [];
+                player.plant = false;
+                player.apuesta = 0;
+            });
+            this.baraja = new Baraja();
+            this.plantados = 0;
+            this.totalApuestas = 0;
+            this.turnoActual = 0;
+            this.empezada = false;
+            this.reiniciada = true;
+            this.reiniciando = false;
+        }, 20000);
+    }
+    
+
+
     
     
 
@@ -296,38 +274,59 @@ export class Partida {
         return ganadores;
     }
       distribuirPremios() {
-        const posCrupier = this.jugadores.findIndex(j => j.tipo === "Crupier");
-        const crupier = this.jugadores[posCrupier];
-    
-        let crupierGana = false;
-    
-        this.jugadores.forEach(jugador => {
-            if (jugador.tipo !== "Player") return;
-    
-            if (jugador.puntaje > 21) {
-                console.log(`El jugador ${jugador.nombre} se pasó y pierde su apuesta.`);
-                crupierGana = true;
-            } else if (crupier.puntaje > 21) {
-                jugador.balance += jugador.apuesta * 2;
-                console.log(`El crupier se pasó; el jugador ${jugador.nombre} gana ${jugador.apuesta * 2}.`);
-            } else if (jugador.puntaje > crupier.puntaje) {
-                jugador.balance += jugador.apuesta * 2;
-                console.log(`El jugador ${jugador.nombre} gana ${jugador.apuesta * 2}.`);
-            } else if (jugador.puntaje === crupier.puntaje) {
-                jugador.balance += jugador.apuesta;
-                console.log(`El jugador ${jugador.nombre} empata y recupera su apuesta.`);
-            } else {
-                crupierGana = true;
-                console.log(`El jugador ${jugador.nombre} pierde su apuesta.`);
-            }
-    
-            jugador.apuesta = 0;
-        });
-            if (crupierGana) {
-            console.log("El crupier gana, todas las apuestas se reinician.");
-            this.totalApuestas = 0;
+    const posCrupier = this.jugadores.findIndex(j => j.tipo === "Crupier");
+    const crupier = this.jugadores[posCrupier];
+
+    let totalApuestas = 0;
+    this.jugadores.forEach(jugador => {
+        if (jugador.tipo === "Player") {
+            totalApuestas += jugador.apuesta;
         }
+    });
+
+    console.log(`Total de apuestas en juego: ${totalApuestas}`);
+
+    // El crupier solo gana si TODOS los jugadores pierden (se pasan o tienen menos puntos)
+    let algunJugadorGana = false;
+
+    this.jugadores.forEach(jugador => {
+        if (jugador.tipo !== "Player") return;
+
+        if (jugador.puntaje > 21) {
+            // Jugador pierde su apuesta
+            console.log(`El jugador ${jugador.nombre} se pasó y pierde su apuesta.`);
+        } else if (crupier.puntaje > 21) {
+            // Crupier se pasa, todos los jugadores que no se pasaron ganan el doble
+            jugador.balance += jugador.apuesta * 2;
+            console.log(`El crupier se pasó; el jugador ${jugador.nombre} gana ${jugador.apuesta * 2}.`);
+            algunJugadorGana = true;
+        } else if (jugador.puntaje > crupier.puntaje) {
+            let premio = jugador.apuesta * 2;
+            jugador.balance += premio;
+            console.log(`El jugador ${jugador.nombre} gana ${premio}.`);
+            algunJugadorGana = true;
+        } else if (jugador.puntaje === crupier.puntaje) {
+            jugador.balance += jugador.apuesta; // Recupera su apuesta
+            console.log(`El jugador ${jugador.nombre} empata y recupera su apuesta.`);
+            algunJugadorGana = true;
+        } else {
+            // Jugador pierde su apuesta
+            console.log(`El jugador ${jugador.nombre} pierde su apuesta.`);
+        }
+
+        jugador.apuesta = 0; // Reseteamos la apuesta del jugador
+    });
+
+    // Si ningún jugador gana o empata, el crupier se queda con todas las apuestas
+    if (!algunJugadorGana) {
+        console.log(`El crupier gana y se queda con ${totalApuestas} en apuestas restantes.`);
+    } else {
+        console.log(`Apuestas restantes después de repartir premios: 0`);
     }
+
+    this.totalApuestas = 0; // Siempre se reinicia el total de apuestas al final de la ronda
+}
+
     
     
     mostrarPuntuacion(i) {
@@ -342,7 +341,7 @@ export class Partida {
                 crupier.cartas = [];
                 crupier.puntaje = 0;
             }
-
+            
             this.jugadores.forEach(player => {
                 player.puntaje = 0;
                 player.cartas = [];
@@ -357,6 +356,8 @@ export class Partida {
             this.empezada = false;
             this.reiniciada = true;
             this.totalApuestas = 0;
+
+            this.iniciarNuevoJuego();
     }
         
 

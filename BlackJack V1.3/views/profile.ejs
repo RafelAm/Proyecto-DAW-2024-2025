@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de <%= user.nombre %></title>
+ <script>
+    function mostrarDialogo() {
+        const sessionUser = "<%= loggedIn %>";  
+        const profileUser = "<%= user.nombre %>";  
+
+        if (sessionUser === profileUser) {
+            const dialog = document.createElement("div");
+            dialog.classList.add("dialog");
+
+            dialog.innerHTML = `
+                <h2 class="dialog-title">Editar Perfil</h2>
+                <form action="/profile/update" method="POST" class="edit-form">
+                    <label for="nombre" class="form-label">Nombre:</label>
+                    <input type="text" name="nombre" id="nombre" value="<%= user.nombre %>" required class="form-input">
+
+                    <label for="correo" class="form-label">Correo:</label>
+                    <input type="email" name="correo" id="correo" value="<%= user.correo %>" required class="form-input">
+
+                    <button type="submit" class="form-submit">Guardar cambios</button>
+                    <button type="button" onclick="cerrarDialogo()" class="form-cancel">Cancelar</button>
+                </form>
+            `;
+
+            document.body.appendChild(dialog);
+
+            const overlay = document.createElement("div");
+            overlay.classList.add("overlay");
+            overlay.onclick = cerrarDialogo;
+            document.body.appendChild(overlay);
+        } else {
+            alert("No tienes permiso para editar este perfil.");
+        }
+    }
+
+    function cerrarDialogo() {
+        document.querySelector(".dialog")?.remove();
+        document.querySelector(".overlay")?.remove();
+    }
+</script>
+
+
+    <link rel="stylesheet" href="/css/profile.css"> <!-- Asegúrate de incluir tu archivo CSS -->
+</head>
+<body>
+<div class="profile-container">
+    <img src="/images/default-user.png" alt="Foto de perfil" class="profile-image">
+    <h1 class="profile-name">Bienvenido, <%= user.nombre %>!</h1>
+    <p class="profile-info"><strong>Email:</strong> <%= user.correo %></p>
+    <p class="profile-info"><strong>Dinero:</strong> <%= user.dinero %> €</p>
+    <p class="profile-info"><strong>Rol:</strong> <%= user.rol %></p>
+    <p class="profile-info"><strong>Fecha de Registro:</strong> <%= new Date(user.fecha_registro).toLocaleString('es-ES', { 
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
+
+    <hr>
+
+    <h2 class="profile-subtitle">📊 Estadísticas de Juego</h2>
+    <p class="profile-info"><strong>Partidas jugadas:</strong> <%= user.total_partidas || 0 %></p>
+    <p class="profile-info"><strong>Victorias:</strong> <%= user.total_victorias || 0 %></p>
+    <p class="profile-info"><strong>Derrotas:</strong> <%= user.total_derrotas || 0 %></p>
+    <p class="profile-info"><strong>Dinero ganado:</strong> <%= user.total_dinero_ganado || 0 %> €</p>
+    <p class="profile-info"><strong>Dinero perdido:</strong> <%= user.total_dinero_perdido || 0 %> €</p>
+
+    <% if (loggedIn && sessionUser === user.nombre) { %>
+        <button onclick="mostrarDialogo()" class="edit-btn">✏️ Editar perfil</button>
+    <% } %>
+</div>
+
+
+</body>
+</html>

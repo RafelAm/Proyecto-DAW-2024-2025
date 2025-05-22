@@ -1,0 +1,148 @@
+// Variables de colores
+$primary-color: #ff5c5c;
+$background-color: #f8f8f8;
+$text-color: #333;
+$shadow-color: rgba(0, 0, 0, 0.3);
+
+// Contenedor principal del dashboard
+.dashboard-container {
+    max-width: 800px;
+    margin: 50px auto;
+    background-color: white;
+    padding: 20px;
+    box-shadow: 0px 0px 10px $shadow-color;
+    border-radius: 10px;
+    text-align: center;
+}
+
+// Dropdowns de selección
+.dropdown-label {
+    font-size: 18px;
+    margin: 10px 0;
+    display: block;
+    color: $text-color;
+}
+
+.dropdown-select {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+// Contenedor de los diálogos
+.dialog-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+// Estilos de los diálogos
+.dialog {
+    display: none;
+    background: white;
+    box-shadow: 0px 0px 10px $shadow-color;
+    border-radius: 10px;
+    padding: 20px;
+    width: 350px;
+    text-align: center;
+
+    input, select {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .button-group {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+
+            &:first-child {
+                background-color: #28a745;
+            }
+
+            &:nth-child(2) {
+                background-color: #ff9800;
+            }
+
+            &:last-child {
+                background-color: #d9534f;
+            }
+        }
+    }
+}
+.create-user-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 20px;
+
+    &:hover {
+        background-color: #218838;
+    }
+}
+
+.dialog {
+    display: none;
+    background: white;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    width: 350px;
+    text-align: center;
+    input[type="password"] {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .button-group {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+
+            &:first-child {
+                background-color: #28a745;
+            }
+
+            &:nth-child(2) {
+                background-color: #d9534f;
+            }
+        }
+    }
+}

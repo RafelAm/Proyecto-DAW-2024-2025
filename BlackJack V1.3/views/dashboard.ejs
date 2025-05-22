@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="dashboard-container">
+    <h1 class="dashboard-title">📊 Dashboard de Partidas</h1>
+
+    <!-- Botón para crear usuario -->
+    <button onclick="mostrarDialogoCreacion()" class="create-user-btn">➕ Crear Usuario</button>
+
+    <!-- Seleccionar usuario -->
+    <label for="player-select" class="dropdown-label">Seleccionar Usuario:</label>
+    <select id="player-select" class="dropdown-select" onchange="mostrarDialogo('player', this.value)">
+        <option value="">Selecciona un usuario</option>
+        <% jugadores.forEach(player => { %>
+            <option value="<%= player.id %>"><%= player.nombre %></option>
+        <% }) %>
+    </select>
+
+    <!-- Seleccionar partida -->
+    <label for="game-select" class="dropdown-label">Seleccionar Partida:</label>
+    <select id="game-select" class="dropdown-select" onchange="mostrarDialogo('game', this.value)">
+        <option value="">Selecciona una partida</option>
+        <% partidas.forEach(game => { %>
+            <option value="<%= game.id %>">Partida <%= game.id %></option>
+        <% }) %>
+    </select>
+
+    <!-- Contenedor de los diálogos -->
+    <div class="dialog-container">
+        <div id="player-dialog" class="dialog"></div>
+        <div id="game-dialog" class="dialog"></div>
+        <div id="create-user-dialog" class="dialog" style="display: none;"></div>
+    </div>
+</div>
+
+
+
+
+<script>
+    function mostrarDialogo(type, id) {
+        if (!id) return; // Evita errores si no hay selección
+
+        fetch(`/get-info/${type}/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                const dialog = document.getElementById(type === "player" ? "player-dialog" : "game-dialog");
+                dialog.innerHTML = generarHTMLDialogo(type, data);
+                dialog.style.display = "block";
+            })
+            .catch(error => console.error("Error al obtener datos:", error));
+    }
+    function mostrarDialogoCreacion() {
+        const dialog = document.getElementById("create-user-dialog");
+        dialog.innerHTML = `
+            <div id="create-user-dialog">
+                <h2>Crear Nuevo Usuario</h2>
+                <form id="create-form">
+                    <label for="nuevo-nombre">Nombre de Usuario:</label>
+                    <input type="text" id="nuevo-nombre" name="nuevo-nombre" required onblur="verificarUsuario()">
+
+                    <label for="nuevo-correo">Correo Electrónico:</label>
+                    <input type="email" id="nuevo-correo" name="nuevo-correo" required onblur="verificarUsuario()">
+
+                    <p id="error-message" class="error-message" style="display: none; color: red;"></p>
+
+                    <label for="nuevo-password">Contraseña:</label>
+                    <input type="password" id="nuevo-password" name="nuevo-password" required>
+
+                    <label for="nuevo-dinero">Dinero Inicial:</label>
+                    <input type="number" id="nuevo-dinero" name="nuevo-dinero" value="1000">
+
+                    <label for="nuevo-rol">Rol:</label>
+                    <select id="nuevo-rol" name="nuevo-rol">
+                        <option value="Jugador">Jugador</option>
+                        <option value="Administrador">Administrador</option>
+                    </select>
+
+                    <div class="button-group">
+                        <button type="button" onclick="crearUsuario()" id="crear-btn">✅ Crear</button>
+                        <button type="button" onclick="cerrarDialogo('create-user')" class="close-btn">❌ Cerrar</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        dialog.style.display = "block";
+    }
+
+function generarHTMLDialogo(type, data) {
+    if (type === "player") {
+        return `
+            <div id="player-dialog">
+                <h2>Modificar Usuario</h2>
+                <form id="edit-form">
+                    <label for="nombre">Nombre de Usuario:</label>
+                    <input type="text" id="nombre" name="nombre" value="${data.nombre}">
+
+                    <label for="correo">Correo Electrónico:</label>
+                    <input type="email" id="correo" name="correo" value="${data.correo}" readonly>
+
+                    <label for="dinero">Dinero:</label>
+                    <input type="number" id="dinero" name="dinero" value="${data.dinero}">
+
+                    <label for="rol">Rol:</label>
+                    <select id="rol" name="rol">
+                        <option value="Jugador" ${data.rol === "Jugador" ? "selected" : ""}>Jugador</option>
+                        <option value="Administrador" ${data.rol === "Administrador" ? "selected" : ""}>Administrador</option>
+                    </select>
+
+                    <div class="button-group">
+                        <button type="button" onclick="actualizarUsuario(${data.id})">💰 Añadir Dinero</button>
+                        <button type="button" onclick="cambiarRol(${data.id})">🔄 Cambiar Rol</button>
+                        <button type="button" onclick="eliminarUsuario(${data.id})" class="delete-btn">🗑️ Eliminar</button>
+                        <button type="button" onclick="cerrarDialogo('player')" class="close-btn">❌ Cerrar</button>
+                    </div>
+                </form>
+                <div id="create-user-container" style="display: none;">
+                    <p>Usuario eliminado.</p>
+                    <button onclick="crearUsuario()" class="create-btn">➕ Crear Nuevo Usuario</button>
+                </div>
+            </div>
+        `;
+    } else {
+        return `
+            <h2>Partida ${data.id}</h2>
+            <p><strong>Jugadores:</strong> ${data.num_jugadores}</p>
+            <p><strong>Puntos Crupier:</strong> ${data.puntos_crupier}</p>
+            <p><strong>Ganador:</strong> ${data.ganador}</p>
+            <p><strong>Bote:</strong> ${data.bote} €</p>
+            <p><strong>Baraja utilizada:</strong> ${data.baraja}</p>
+            <button onclick="cerrarDialogo('game')">Cerrar</button>
+        `;
+    }
+}
+
+
+    function cerrarDialogo(type) {
+        document.getElementById(type === "player" ? "player-dialog" : "game-dialog").style.display = "none";
+    }
+
+    function actualizarUsuario(userId) {
+        const dinero = document.getElementById("dinero").value;
+        fetch('/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, dinero })
+        }).then(response => response.json())
+        .then(data => alert(data.message))
+        .catch(error => console.error("Error al actualizar:", error));
+    }
+
+    function cambiarRol(userId) {
+        const rol = document.getElementById("rol").value;
+        fetch('/update-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, rol })
+        }).then(response => response.json())
+        .then(data => alert(data.message))
+        .catch(error => console.error("Error al cambiar rol:", error));
+    }
+
+function eliminarUsuario(userId) {
+    if (!userId) {
+        alert("Error: No se proporcionó un ID de usuario.");
+        return;
+    }
+
+    if (confirm("¿Seguro que quieres eliminar este usuario?")) {
+        fetch('/delete-user', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId }) // Ahora envía el userId correctamente
+        }).then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            document.getElementById("player-dialog").style.display = "none";
+        })
+        .catch(error => console.error("Error al eliminar usuario:", error));
+    }
+}
+
+function crearUsuario() {
+    const nuevoNombre = document.getElementById("nuevo-nombre").value.trim();
+    const nuevoCorreo = document.getElementById("nuevo-correo").value.trim();
+    const nuevoPassword = document.getElementById("nuevo-password").value.trim();
+    const nuevoDinero = parseFloat(document.getElementById("nuevo-dinero").value) || 1000;
+    const nuevoRol = document.getElementById("nuevo-rol").value;
+
+    if (!nuevoNombre || !nuevoCorreo || !nuevoPassword) {
+        alert("Por favor, ingresa un nombre, un correo y una contraseña válida.");
+        return;
+    }
+
+    fetch('/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: nuevoNombre, correo: nuevoCorreo, password: nuevoPassword, dinero: nuevoDinero, rol: nuevoRol })
+    }).then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert("Error: " + data.error);
+        } else {
+            alert(data.message);
+            cerrarDialogo('create-user');
+        }
+    })
+    .catch(error => console.error("Error al crear usuario:", error));
+}
+
+
+</script>
+
+
+
+</body>
+</html>
