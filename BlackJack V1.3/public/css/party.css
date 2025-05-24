@@ -86,7 +86,7 @@ body .Player .botones-container {
 body .Crupier .botones-container button,
 body .Player .botones-container button {
   width: 50%;
-  background-color: black;
+  background-color: darkred;
   border: none;
   margin: 0 2%;
   color: white;
@@ -230,6 +230,17 @@ body #apuestaContainer {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+body .yo-mismo {
+  z-index: 2;
+  left: 50% !important;
+  top: 70% !important;
+  transform: translateX(-50%) !important;
+}
+body .jugador-en-turno {
+  box-shadow: 0 0 25px 8px #ffe600, 0 0 10px 2px #ffb300;
+  border: 3px solid #ffe600;
+  z-index: 3;
 }
 
 body::before {

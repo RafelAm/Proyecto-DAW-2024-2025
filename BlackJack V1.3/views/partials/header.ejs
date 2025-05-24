@@ -1,12 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="/css/header.css">
-</head>
-<body>
+<link rel="stylesheet" href="/css/header.css">
 
     
 <nav class="navbar">
@@ -17,19 +9,32 @@
         <li><a href="#partidas">Partidas</a></li>
         <li><a href="#howToPlay">¿Como jugar?</a></li>
         <li><a href="#">Contacto</a></li>
-        <% if (!loggedIn) { %>
+        <li><a href="/shop">Tienda</a></li>
+        <% if (isAdmin) { %>
+            <li><a href="/dashboard">Dashboard</a></li>
+        <% } %>
+ <% if (loggedIn) { %>
+            <li class="profile-menu">
+                <a href="/profile/<%= username %>">
+                    <img src="<%= profileImage || '/images/default-user.png' %>" alt="Perfil" class="profile-img">
+                </a>
+                <ul class="dropdown">
+                    <li>
+                        <form action="/logout" method="POST">
+                            <button type="submit">Cerrar Sesión</button>
+                        </form>
+                    </li>
+                </ul>
+            </li>
+        <% } else { %>
             <li><a href="/login">Iniciar Sesión</a></li>
             <li><a href="/register">Registrarse</a></li>
-        <% } else { %>
-            <li>        
-                <form action="/logout" method="POST">
-                <button type="submit">Cerrar Sesión</button>
-                </form>
-            </li>
         <% } %>
 
     </ul>
 </nav>
+
+
 
 <script>
 
@@ -42,6 +47,32 @@
         });
     });
 
+
+document.addEventListener("DOMContentLoaded", function() {
+    const profileMenu = document.querySelector('.profile-menu');
+    const dropdown = document.querySelector('.profile-menu .dropdown');
+    let hideTimeout;
+
+    if (profileMenu && dropdown) {
+        profileMenu.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimeout);
+            dropdown.style.display = 'block';
+        });
+        profileMenu.addEventListener('mouseleave', () => {
+            hideTimeout = setTimeout(() => {
+                dropdown.style.display = 'none';
+            }, 200); // 200ms de margen para mover el mouse
+        });
+        dropdown.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimeout);
+            dropdown.style.display = 'block';
+        });
+        dropdown.addEventListener('mouseleave', () => {
+            hideTimeout = setTimeout(() => {
+                dropdown.style.display = 'none';
+            }, 200);
+        });
+    }
+});
 </script>
-</body>
-    
+

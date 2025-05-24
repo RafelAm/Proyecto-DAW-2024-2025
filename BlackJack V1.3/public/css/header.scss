@@ -4,24 +4,26 @@
     top: 0;
     left: 0;
     width: 100%;
+    height: 70px; // o el valor que uses realmente
     background-color: #007bff;
     display: flex;
     align-items: center;
     justify-content: space-between;
     color: white;
-
     box-sizing: border-box;
+    z-index: 4000; // <--- Añade o sube este valor
+
     .logo {
         display: flex;
         align-items: center;
-        gap: 10px; // Espacio entre icono y texto
+        gap: 10px;
         font-size: 1.5rem;
         font-weight: bold;
 
         img {
-            width: 60px; // Tamaño del icono
+            width: 60px;
             height: 60px;
-            filter: drop-shadow(0 10px 3px rgba(0, 0, 0, 0.9)); // Sombra del icono
+            filter: drop-shadow(0 10px 3px rgba(0, 0, 0, 0.9));
         }
     }
 
@@ -33,84 +35,149 @@
         justify-content: flex-end;
         width: 70%;
         padding: 0 15px;
+        align-items: center;
         li {
             a {
                 color: white;
                 text-decoration: none;
                 font-size: 1.1rem;
                 white-space: nowrap;
-                
                 &:hover {
                     text-decoration: underline;
                 }
             }
-
-
-
         }
     }
 
-            .menu-toggle {
-                display: none;
+    .menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 3em;
+        cursor: pointer;
+    }
+
+    .profile-menu {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 100%;
+        z-index: 1000;
+        a {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+            object-fit: cover;
+            transition: box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            background: #fff;
+            padding: 0;
+            margin: 0;
+            display: block;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 48px; // justo debajo de la imagen
+            background: #fff;
+            color: #333;
+            min-width: 160px; // Aumenta el ancho mínimo si es necesario
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            z-index: 3000; // <--- Aumenta el z-index aquí
+            padding: 0;
+            margin: 0;
+            list-style: none;
+
+            li {
+                padding: 10px 20px;
+                text-align: center; // <-- Añade esto para centrar el contenido
+                white-space: nowrap; // <-- Añade esto para evitar saltos de línea
+            }
+            button {
                 background: none;
                 border: none;
-                color: white;
-                font-size: 3em;
+                color: #007bff;
+                font-size: 1em;
                 cursor: pointer;
+                width: 100%; // Opcional: que el botón ocupe todo el ancho del dropdown
+                text-align: center; // Centra el texto del botón
             }
+            button:hover {
+                color: #d32f2f;
+            }
+            form {
+                display: flex;
+                justify-content: center; // <-- Centra el botón horizontalmente
+                align-items: center;
+                margin: 0;
+            }
+        }
+
+        &:hover .dropdown,
+        .dropdown:hover {
+            display: block;
+        }
+    }
 }
 
-
-
-/* 📱 Ajustes para móviles y tablets */
+// 📱 Ajustes para móviles y tablets
 @media (max-width: 768px) {
-    .navbar{
+    .navbar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        .logo {
+            display: none;
+        }
+
+        .nav-links {
+            visibility: hidden;
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-30px);
+            transition: max-height 1.0s ease, opacity 0.9s ease, transform 0.9s ease;
             display: flex;
             flex-direction: column;
-            align-items: center;
-    .logo {
-        display: none; /* Se expandirá según el espacio disponible */
-    }           
-    
-.nav-links {
-    visibility: hidden;
-    max-height: 0;
-    opacity: 0;
-    transform: translateY(-30px); // Inicia desplazado más arriba
-    transition: max-height 1.0s ease, opacity 0.9s ease, transform 0.9s ease; // Animación más suave
+            background-color: #007bff;
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            text-align: center;
 
-    display: flex;
-    flex-direction: column;
-    background-color: #007bff;
-    position: absolute;
-    top: 60px;
-    left: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    text-align: center;
+            li {
+                padding: 10px 0;
+            }
 
-    li {
-        padding: 10px 0;
+            &.active {
+                visibility: visible;
+                max-height: 600px;
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .menu-toggle {
+            display: block;
+        }
+
+        .nav-links.active {
+            display: flex;
+        }
     }
-
-    &.active {
-        visibility: visible;
-        max-height: 600px; 
-        opacity: 1;
-        transform: translateY(0); 
-    }
-}
-
-
-
-
-    .menu-toggle {
-        display: block;
-    }
-
-    .nav-links.active {
-        display: flex;
-    }
-}
 }

@@ -2,35 +2,24 @@
 $primary-color: #007bff;
 $secondary-color: #333;
 $text-color: white;
+$header-height: 70px;
+$header-height-mobile: 56px;
 
 // Estilos generales
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-}
-
-// Carrusel
-// Variables de colores
-$primary-color: #007bff;
-$secondary-color: #333;
-$text-color: white;
-
-// Estilos generales
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
+    padding-top: $header-height; // Así todo el contenido empieza debajo del header
 }
 
 // Carrusel
 .carousel {
-    margin-top: 60px;
     position: relative;
+    z-index: 1;
     max-width: 100%;
     height: 300px;
     overflow: hidden;
-
     .carousel-container {
         position: relative;
         width: 100%;
@@ -87,9 +76,6 @@ body {
     }
 }
 
-
-
-
 // Listado de partidas
 .game-list {
 // Solo 2 elementos por fila
@@ -97,71 +83,89 @@ body {
     padding: 20px;
 
     .games {
-        display: grid;
-        grid-template-columns: repeat(3, 0.2fr); 
-        gap: 20px;
-        justify-content: center;
-
-.game {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    width: 250px; // Ajusta según el diseño que necesites
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    gap: 15px; // Espacio entre los elementos
-    transition: transform 0.3s ease-in-out;
-
-    &:hover {
-        transform: scale(1.05);
-    }
-
-    img {
-        width: 70px;
-        height: 70px;
-        object-fit: contain;
-    }
-
-    .content {
         display: flex;
-        flex-direction: column; // Asegura que h4 y el botón queden en columna
-        align-items: start;
-        gap: 5px; // Espacio entre h4 y el botón
-        width: 80%;
-        h4 {
-            font-size: 1.2rem;
-            margin: 0;
-        }
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
 
-        button {
-            background-color: $primary-color;
-            color: white;
-            padding: 8px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease-in-out;
-            width: 70%;
+        .game {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: 250px; // Ajusta según el diseño que necesites
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            gap: 15px; // Espacio entre los elementos
+            transition: transform 0.3s ease-in-out;
 
             &:hover {
-                background-color: darken($primary-color, 10%);
+                transform: scale(1.05);
+            }
+
+            img {
+                width: 70px;
+                height: 70px;
+                object-fit: contain;
+            }
+
+            .content {
+                display: flex;
+                flex-direction: column; // Asegura que h4 y el botón queden en columna
+                align-items: start;
+                gap: 5px; // Espacio entre h4 y el botón
+                width: 80%;
+                h4 {
+                    font-size: 1.2rem;
+                    margin: 0;
+                }
+
+                button {
+                    background-color: $primary-color;
+                    color: white;
+                    padding: 8px;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    transition: background-color 0.3s ease-in-out;
+                    width: 70%;
+
+                    &:hover {
+                        background-color: darken($primary-color, 10%);
+                    }
+                }
+            }
+
+            .status-icon {
+                position: absolute;
+                top: 10px;
+                right: 14px;
+                z-index: 2;
+                pointer-events: none;
+                user-select: none;
             }
         }
     }
-}
-
-
-    }
 
     .random-game {
-        margin-top: 20px;
+        margin: 30px auto 0 auto;
+        display: block;
         background-color: #28a745;
         color: white;
-        padding: 10px;
+        padding: 18px 40px;
         border: none;
+        border-radius: 10px;
+        font-size: 1.4em;
+        font-weight: bold;
         cursor: pointer;
+        box-shadow: 0 2px 10px rgba(40,167,69,0.12);
+        transition: background 0.2s, transform 0.2s;
+        &:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+        }
     }
 }
 
@@ -176,17 +180,181 @@ body {
     }
 }
 
-
-
-
-
-// Sección "¿Cómo jugar?"
-.how-to-play {
+// Preview de la tienda
+.shop-preview {
+    margin: 40px auto 30px auto;
+    padding: 32px 10px 28px 10px;
+    background: #f7f7f7;
+    border-radius: 18px;
+    max-width: 900px; // Más ancho
     text-align: center;
-    padding: 20px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.10);
 
-    video {
-        max-width: 100%;
+    h2 {
+        margin-bottom: 28px;
+        color: $primary-color;
+        font-size: 2em; // Más grande
+    }
+
+    .shop-products {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 38px;
+    }
+
+    .shop-product {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+        padding: 28px 32px;
+        min-width: 180px;
+        max-width: 260px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        box-sizing: border-box;
+
+        img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .shop-info {
+            display: flex;
+            flex-direction: column; // Esto asegura que el precio quede debajo
+            align-items: center;
+            gap: 6px;
+            span.cantidad {
+                font-weight: bold;
+                color: #333;
+                font-size: 1.3em;
+            }
+            span.precio {
+                color: #007bff;
+                font-size: 1.15em;
+            }
+        }
+    }
+
+    .go-shop {
+        background: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        padding: 14px 38px;
+        font-size: 1.25em;
+        cursor: pointer;
+        margin-top: 18px;
+        transition: background 0.2s;
+        &:hover {
+            background: #0056b3;
+        }
+    }
+}
+
+// Responsive
+@media (max-width: 900px) {
+    .shop-preview {
+        max-width: 98vw;
+        .shop-products {
+            gap: 18px;
+        }
+        .shop-product {
+            min-width: 120px;
+            padding: 18px 10px;
+            img { width: 56px; height: 56px; }
+        }
+    }
+}
+@media (max-width: 600px) {
+    .shop-preview {
+        padding: 12px 2vw 10px 2vw;
+        h2 { font-size: 1.2em; }
+        .shop-products {
+            gap: 10px;
+        }
+        .shop-product {
+            min-width: 90px;
+            padding: 10px 6px;
+            img { width: 36px; height: 36px; }
+            .shop-info span:first-child { font-size: 1em; }
+            .shop-info span:last-child { font-size: 1em; }
+        }
+        .go-shop {
+            width: 100%;
+            font-size: 1em;
+            padding: 10px 0;
+        }
+    }
+}
+
+// Responsive para tablet y móvil
+@media (max-width: 1024px) {
+    .carousel {
+        height: 200px;
+        .carousel-item {
+            height: 200px;
+            img { height: 200px; }
+        }
+    }
+    .game-list {
+        .games {
+            // No necesitas grid-template-columns aquí
+            // El flex-wrap y justify-content: center ya lo centran
+        }
+    }
+    .shop-preview {
+        .shop-products {
+            flex-direction: column; // Una columna en tablet
+            align-items: center;
+            gap: 28px;
+        }
+        .shop-product {
+            min-width: 60vw;
+            max-width: 90vw;
+            width: 90vw;
+            padding: 32px 18px;
+            img { width: 80px; height: 80px; }
+            .shop-info span:first-child { font-size: 1.3em; }
+            .shop-info span:last-child { font-size: 1.15em; }
+        }
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        padding-top: $header-height-mobile;
+    }
+    .navbar {
+        height: $header-height-mobile;
+    }
+
+    .carousel {
+        height: 120px;
+        .carousel-item {
+            height: 120px;
+            img { height: 120px; }
+        }
+    }
+    .game-list {
+        padding: 10px;
+        .games {
+            // Igual, solo flex-wrap y justify-content: center
+            gap: 12px;
+        }
+        .game {
+            width: 98vw;
+            min-width: 0;
+            padding: 10px;
+            img {
+                width: 50px;
+                height: 50px;
+            }
+        }
     }
 }
 

@@ -1,0 +1,165 @@
+.shop-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+.shop-container h1 {
+  margin-bottom: 30px;
+}
+.shop-container .cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+}
+.shop-container .shop-card {
+  background: #f7f7f7;
+  border-radius: 10px;
+  padding: 24px 32px;
+  min-width: 180px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.shop-container .shop-card .coins {
+  font-size: 1.4em;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.shop-container .shop-card .price {
+  font-size: 1.1em;
+  margin-bottom: 18px;
+}
+.shop-container .shop-card .buy-btn {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
+}
+.shop-container .shop-card .buy-btn:hover {
+  background: #0056b3;
+}
+
+.dialog, .overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 5000;
+}
+
+.dialog {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
+  max-width: 350px;
+  padding: 30px 24px;
+  margin: 100px auto 0 auto;
+  left: 50%;
+  top: 10vh;
+  transform: translateX(-50%);
+  z-index: 5100;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.overlay {
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 5000;
+}
+
+#paymentDialog.dialog {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  max-width: 350px;
+  padding: 32px 28px;
+  margin: 100px auto 0 auto;
+  left: 50%;
+  top: 10vh;
+  transform: translateX(-50%);
+  z-index: 5100;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 1.05em;
+}
+
+#paymentDialog h2 {
+  margin-bottom: 18px;
+  color: #007bff;
+  font-size: 1.3em;
+}
+
+#paymentDialog label {
+  margin-top: 8px;
+  margin-bottom: 2px;
+  font-weight: 500;
+  color: #333;
+  text-align: left;
+}
+
+#paymentDialog input[type=text] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid #007bff;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 1em;
+  transition: border 0.2s;
+}
+
+#paymentDialog input[type=text]:focus {
+  border: 1.5px solid #0056b3;
+  outline: none;
+}
+
+#paymentDialog button[type=submit] {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 0;
+  margin-top: 10px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#paymentDialog button[type=submit]:hover {
+  background: #0056b3;
+}
+
+#paymentDialog button[type=button] {
+  background: #eee;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 0;
+  margin-top: 6px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#paymentDialog button[type=button]:hover {
+  background: #ccc;
+}
+
+#paymentError {
+  color: #d32f2f;
+  margin-top: 8px;
+  min-height: 20px;
+  font-size: 0.98em;
+}/*# sourceMappingURL=shop.css.map */

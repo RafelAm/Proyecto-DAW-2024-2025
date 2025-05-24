@@ -186,75 +186,110 @@ function actualizarResumenApuesta() {
 // Renderizar el juego
 // Llamar a la función de gestión dentro de `renderGame`
 function renderGame(gameState) {
-  
-  console.log("Estado del juego recibido:", gameState);
     const mesa = document.querySelector(".mesa");
     mesa.innerHTML = "";
 
-    gameState.state.jugadores.forEach((jugador) => {
-        const silla = document.createElement("div");
-        silla.classList.add(jugador.tipo);
-        
-        silla.innerHTML = `
-            <div class="info">
-                <div class="personal-container">
-                    <p class="name">${jugador.nombre}</p>
-                    <img src="${jugador.tipo === 'Crupier' ? '/images/dealer.png' : '/images/default-user.png'}" alt="${jugador.tipo}" class="img-${jugador.tipo}">
-                </div>
-                <p class="puntos">Puntos: ${jugador.puntaje}</p>
-                ${jugador.tipo === "Player" ? `
-    <p class="apuesta">Apuesta: ${jugador.apuesta} monedas</p>
-    ${jugador.fichasApostadas && jugador.fichasApostadas.length > 0
-        ? `<p class="fichas">Fichas: ${
-            Object.entries(jugador.fichasApostadas.reduce((acc, f) => {
-                acc[f] = (acc[f] || 0) + 1; return acc;
-            }, {})).map(([valor, cantidad]) => `${cantidad}x${valor}`).join(", ")
-        }</p>`
-        : ""
+    // Separa tu jugador de los demás
+    const jugadores = gameState.state.jugadores;
+    const miJugador = jugadores.find(j => j.socketId === currentSocketId);
+    const otrosJugadores = jugadores.filter(j => j.socketId !== currentSocketId);
+
+    // Renderiza primero tu propio jugador
+    if (miJugador) {
+        const silla = crearSillaJugador(miJugador, true, gameState);
+        mesa.appendChild(silla);
     }
-` : ""}
-            </div>
-            <div class="cartas"></div>
-        `;
 
-        const cartasContainer = silla.querySelector(".cartas");
-        jugador.cartas.forEach((carta, index) => {
-            const card = document.createElement("div");
-            card.classList.add("cards");
-
-            // Si el jugador es el usuario actual, muestra todas sus cartas
-            if (jugador.socketId === currentSocketId) {
-                card.textContent = `${carta.numero} ${iconosPalos[carta.palo]}`;
-            }
-            // Si es el crupier, solo muestra la primera carta
-            else if (jugador.tipo === "Crupier" && index === 0) {
-                card.textContent = `${carta.numero} ${iconosPalos[carta.palo]}`;
-            }
-            // Oculta las cartas de los demás jugadores
-            else {
-                card.textContent = "❓";
-            }
-
-            cartasContainer.appendChild(card);
-        });
-
-
-        if (jugador.tipo === "Player" && jugador.nombre === currentUsername) {
-            let botonesContainer = silla.querySelector(".botones-container");
-            if (!botonesContainer) {
-                botonesContainer = document.createElement("div");
-                botonesContainer.classList.add("botones-container");
-                silla.appendChild(botonesContainer);
-            }
-            botonesContainerGlobal = botonesContainer;
-            renderizarBotones(["btnPedirCarta", "btnPlantarse"], botonesContainerGlobal, jugador.plant);
-        }
-
+    // Renderiza los demás jugadores
+    otrosJugadores.forEach(jugador => {
+        const silla = crearSillaJugador(jugador, false, gameState);
         mesa.appendChild(silla);
     });
-    
+
     renderTotalApuestas(gameState.state.totalApuestas);
     gestionarBotonesInterfaz(gameState);
+}
+
+// Nueva función para crear la silla de cada jugador
+function crearSillaJugador(jugador, esMio, gameState) {
+    const silla = document.createElement("div");
+    silla.classList.add(jugador.tipo);
+
+    // Ilumina si es el turno de este jugador
+    if (gameState.turnoActual !== undefined && gameState.state.jugadores[gameState.turnoActual]?.nombre === jugador.nombre) {
+        silla.classList.add("jugador-en-turno");
+    }
+
+    if (esMio) {
+        silla.classList.add("yo-mismo");
+    }
+
+    silla.innerHTML = `
+        <div class="info">
+            <div class="personal-container">
+                <p class="name">${jugador.nombre}</p>
+                <img src="${
+    jugador.tipo === 'Crupier'
+        ? '/images/dealer.png'
+        : (jugador.imagenPerfil || '/images/default-user.png')
+}" alt="${jugador.tipo}" class="img-${jugador.tipo}">
+            </div>
+            <p class="puntos">
+                Puntos: ${(gameState.state.reiniciando || jugador.socketId === currentSocketId) ? jugador.puntaje : "?"}
+            </p>
+            ${jugador.tipo === "Player" ? `
+                <p class="apuesta">Apuesta: ${jugador.apuesta} monedas</p>
+                ${jugador.fichasApostadas && jugador.fichasApostadas.length > 0
+                    ? `<p class="fichas">Fichas: ${
+                        Object.entries(jugador.fichasApostadas.reduce((acc, f) => {
+                            acc[f] = (acc[f] || 0) + 1; return acc;
+                        }, {})).map(([valor, cantidad]) => `${cantidad}x${valor}`).join(", ")
+                    }</p>`
+                    : ""
+                }
+            ` : ""}
+        </div>
+        <div class="cartas"></div>
+    `;
+
+    const cartasContainer = silla.querySelector(".cartas");
+    jugador.cartas.forEach((carta, index) => {
+        const card = document.createElement("div");
+        card.classList.add("cards");
+
+        // Mostrar todas las cartas si la partida está en reinicio (ronda finalizada)
+        if (gameState.state.reiniciando) {
+            card.textContent = `${carta.numero} ${iconosPalos[carta.palo]}`;
+        }
+        // Si el jugador es el usuario actual, muestra todas sus cartas
+        else if (jugador.socketId === currentSocketId) {
+            card.textContent = `${carta.numero} ${iconosPalos[carta.palo]}`;
+        }
+        // Si es el crupier, solo muestra la primera carta
+        else if (jugador.tipo === "Crupier" && index === 0) {
+            card.textContent = `${carta.numero} ${iconosPalos[carta.palo]}`;
+        }
+        // Oculta las cartas de los demás jugadores
+        else {
+            card.textContent = "❓";
+        }
+
+        cartasContainer.appendChild(card);
+    });
+
+
+    if (jugador.tipo === "Player" && jugador.nombre === currentUsername && gameState.state.empezada) {
+        let botonesContainer = silla.querySelector(".botones-container");
+        if (!botonesContainer) {
+            botonesContainer = document.createElement("div");
+            botonesContainer.classList.add("botones-container");
+            silla.appendChild(botonesContainer);
+        }
+        botonesContainerGlobal = botonesContainer;
+        renderizarBotones(["btnPedirCarta", "btnPlantarse"], botonesContainerGlobal, jugador.plant);
+    }
+
+    return silla;
 }
 function renderizarBotones(botonesConfig, container, deshabilitado = false) {
     container.innerHTML = "";
