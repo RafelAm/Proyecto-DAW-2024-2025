@@ -373,16 +373,33 @@ async function emitirGameState(emisor, game, socketId, username) {
             };
         }
 
-        // Si es el crupier, solo muestra la primera carta y oculta el puntaje
+        // Si es el crupier, muestra todas las cartas y el puntaje real si:
+        // - la ronda ha terminado (game.reiniciando)
+        // - O todos los jugadores "Player" están plantados o pasados de 21
         if (jugador.tipo === "Crupier") {
-            return {
-                ...jugador,
-                cartas: jugador.cartas.map((carta, index) =>
-                    index === 0 ? carta : { palo: "?", numero: "?", destapada: false }
-                ),
-                puntaje: "?",
-                imagenPerfil: null // El crupier no tiene imagen de usuario
-            };
+            const todosJugadoresFuera = game.jugadores
+                .filter(j => j.tipo === "Player")
+                .every(j => j.plant || j.puntaje > 21);
+
+            if (game.reiniciando || todosJugadoresFuera) {
+                // Mostrar todas las cartas y el puntaje real del crupier
+                return {
+                    ...jugador,
+                    cartas: jugador.cartas,
+                    puntaje: jugador.puntaje,
+                    imagenPerfil: null
+                };
+            } else {
+                // Ocultar cartas y puntaje como siempre
+                return {
+                    ...jugador,
+                    cartas: jugador.cartas.map((carta, index) =>
+                        index === 0 ? carta : { palo: "?", numero: "?", destapada: false }
+                    ),
+                    puntaje: "?",
+                    imagenPerfil: null
+                };
+            }
         }
 
         // Para los demás jugadores, oculta cartas y puntaje
@@ -420,10 +437,19 @@ async function iniciarCuentaAtras(roomId, game, db, io) {
 
                     if (game.jugadores.length > 1) {
                         game.empezada = true;
-                        game.countDown = false; // <-- Añade esto aquí
+                        game.countDown = false;
                         io.to(roomId).emit("bloquearAcciones", false);
                         game.repartirCartas();
-                        emitirGameState(io.to(roomId), game, socket.id, game.currentUsername);
+                        // Inicializa el turno al primer jugador activo
+                        game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
+                        emitirGameStateATodos(roomId, game, io);
+
+                        // 🔽 Añade esto para mostrar los botones de acción a cada jugador
+                        game.jugadores.forEach(jugador => {
+                            if (jugador.tipo === "Player") {
+                                io.to(jugador.socketId).emit('mostrarBotones', ['btnPedirCarta', 'btnPlantarse']);
+                            }
+                        });
 
                         // --- registro en base de datos ---
                         // 🔹 **1. Insertar la partida en la tabla `Partida`**
@@ -544,7 +570,7 @@ async function iniciarCuentaAtras(roomId, game, db, io) {
             game.turnoActual = siguiente;
         } else {
             io.to(roomId).emit('gameEnd');
-            game.jugarCrupier(game.turnoActual);
+            game.jugarCrupier();
         }
         verificarFinalRound(roomId, game);
         emitirGameStateATodos(roomId, game, io);    
@@ -580,13 +606,13 @@ async function iniciarCuentaAtras(roomId, game, db, io) {
     try {
         
             // **1. Guardar estado previo
-const estadisticasPrevias = {};
-for (const jugador of game.jugadores.filter(j => j.tipo === "Player")) {
-    estadisticasPrevias[jugador.nombre] = {
-        apuesta: jugador.apuesta ?? 0,
-        puntaje: jugador.puntaje,
-        balanceInicial: jugador.balanceInicial ?? jugador.balance,
-    };
+        const estadisticasPrevias = {};
+        for (const jugador of game.jugadores.filter(j => j.tipo === "Player")) {
+            estadisticasPrevias[jugador.nombre] = {
+                apuesta: jugador.apuesta ?? 0,
+                puntaje: jugador.puntaje,
+                balanceInicial: jugador.balanceInicial ?? jugador.balance,
+            };
 }
 
 // 2. Repartir premios
@@ -680,6 +706,35 @@ await db.execute(
         idPartida ?? null
     ]
 );
+
+// Cambia el estado a 'Terminada' en ParticipaEn
+await db.execute(
+    `UPDATE ParticipaEn SET estado = 'Terminada' WHERE idPartida = ?`,
+    [idPartida]
+);
+
+for (const jugador of game.jugadores.filter(j => j.tipo === "Player")) {
+    let resultado = "Perdedor";
+    if (game.ganadores.some(g => g.nombre === jugador.nombre)) {
+        resultado = "Ganador";
+    } else if (
+        jugador.puntaje === game.jugadores[game.jugadores.length-1].puntaje &&
+        jugador.puntaje <= 21
+    ) {
+        resultado = "Empate";
+    }
+    await db.execute(
+        `UPDATE ParticipaEn SET ganador = ? WHERE idUsuario = ? AND idPartida = ?`,
+        [resultado, jugador.id, idPartida]
+    );
+}
+
+// Cambia el estado a 'Terminada' en ParticipaEnCrupier
+await db.execute(
+    `UPDATE ParticipaEnCrupier SET estado = 'Terminada' WHERE idPartida = ?`,
+    [idPartida]
+);
+
 const puntosJugadores = [null, null, null]; // Inicializa con valores vacíos
 
 // Asigna valores solo a los jugadores existentes
@@ -727,6 +782,7 @@ await db.execute(
     } catch (error) {
         io.to(roomId).emit("error", "Hubo un problema al finalizar la partida.");
     }
+    
 }
     // Mostrar botones según el estado de la sesión
     function obtenerBotonesSegunUsuario(usuario) {

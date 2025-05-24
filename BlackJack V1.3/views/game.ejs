@@ -16,7 +16,16 @@
     <%- include('partials/header') %>
     <img class="tbl" src="/images/table.png" alt="Mesa de póker">
     <div class="mesa">
+    <div class="zona-crupier">
+        <!-- Crupier -->
     </div>
+    <div class="zona-jugadores">
+        <!-- Jugadores distribuidos alrededor de la mesa -->
+    </div>
+    <div class="zona-apuestas">
+        <!-- Total de apuestas y fichas -->
+    </div>
+</div>
 
     
     <!--<h1>Chat</h1>
@@ -30,6 +39,7 @@
 const socket = io();
 let gameStateGlobal;
 let currentUsername = "";
+let puedeMostrarBotones = false;
 // Actualizar el estado del juego
 socket.on("gameState", (gameState) => {
     if (!gameState || !gameState.state) {
@@ -189,21 +199,64 @@ function renderGame(gameState) {
     const mesa = document.querySelector(".mesa");
     mesa.innerHTML = "";
 
-    // Separa tu jugador de los demás
-    const jugadores = gameState.state.jugadores;
-    const miJugador = jugadores.find(j => j.socketId === currentSocketId);
-    const otrosJugadores = jugadores.filter(j => j.socketId !== currentSocketId);
-
-    // Renderiza primero tu propio jugador
-    if (miJugador) {
-        const silla = crearSillaJugador(miJugador, true, gameState);
-        mesa.appendChild(silla);
+    // Crupier siempre arriba
+    const crupier = gameState.state.jugadores.find(j => j.tipo === "Crupier");
+    if (crupier) {
+        const crupierDiv = crearSillaJugador(crupier, false, gameState);
+        crupierDiv.classList.add("zona-crupier");
+        mesa.appendChild(crupierDiv);
     }
 
-    // Renderiza los demás jugadores
-    otrosJugadores.forEach(jugador => {
-        const silla = crearSillaJugador(jugador, false, gameState);
-        mesa.appendChild(silla);
+    // Jugadores
+    const jugadores = gameState.state.jugadores.filter(j => j.tipo === "Player");
+    const miJugadorIdx = jugadores.findIndex(j => j.nombre === currentUsername);
+    let ordenFinal = [];
+
+    if (miJugadorIdx > -1) {
+        // Saca al jugador propio
+        const [miJugador] = jugadores.splice(miJugadorIdx, 1);
+        // Orden: izquierda, centro (yo), derecha
+        if (jugadores.length === 0) {
+            ordenFinal = [miJugador];
+        } else if (jugadores.length === 1) {
+            ordenFinal = [jugadores[0], miJugador];
+        } else if (jugadores.length === 2) {
+            ordenFinal = [jugadores[0], miJugador, jugadores[1]];
+        } else {
+            // Si hay más de 2 o 3, reparte a los lados (puedes mejorar esto según tu máximo de jugadores)
+            const mitad = Math.ceil(jugadores.length / 2);
+            ordenFinal = [
+                ...jugadores.slice(0, mitad),
+                miJugador,
+                ...jugadores.slice(mitad)
+            ];
+        }
+    } else {
+        ordenFinal = jugadores;
+    }
+
+    ordenFinal.forEach((jugador, idx) => {
+        const silla = crearSillaJugador(jugador, jugador.socketId === currentSocketId, gameState);
+
+        if (jugador.nombre === currentUsername && puedeMostrarBotones) {
+            // Crea un contenedor vertical para el jugador propio y sus botones
+            let row = document.createElement("div");
+            row.className = "jugador-propio-col";
+            row.appendChild(silla);
+
+            let botonesContainer = document.createElement("div");
+            botonesContainer.className = "jugador-botones";
+            botonesContainerGlobal = botonesContainer;
+            row.appendChild(botonesContainer);
+
+            mesa.appendChild(row);
+
+            if (globalBotonesConfig && globalBotonesConfig.length > 0) {
+                renderizarBotones(globalBotonesConfig, botonesContainerGlobal, false);
+            }
+        } else {
+            mesa.appendChild(silla);
+        }
     });
 
     renderTotalApuestas(gameState.state.totalApuestas);
@@ -213,81 +266,75 @@ function renderGame(gameState) {
 // Nueva función para crear la silla de cada jugador
 function crearSillaJugador(jugador, esMio, gameState) {
     const silla = document.createElement("div");
-    silla.classList.add(jugador.tipo);
+    silla.classList.add(jugador.tipo, "jugador-box");
+    if (esMio) silla.classList.add("yo-mismo");
 
-    // Ilumina si es el turno de este jugador
-    if (gameState.turnoActual !== undefined && gameState.state.jugadores[gameState.turnoActual]?.nombre === jugador.nombre) {
-        silla.classList.add("jugador-en-turno");
-    }
+    // Mostrar puntos solo si es el usuario propio o la ronda terminó
+    let mostrarPuntos = (esMio || gameState.state.reiniciando);
 
-    if (esMio) {
-        silla.classList.add("yo-mismo");
+    // --- NUEVO: Div de apuesta encima ---
+    let apuestaDiv = "";
+    if (
+        jugador.tipo === "Player" &&
+        jugador.fichasApostadas &&
+        jugador.fichasApostadas.length > 0
+    ) {
+        // Cuenta cuántas fichas de cada valor
+        const desglose = Object.entries(
+            jugador.fichasApostadas.reduce((acc, f) => {
+                acc[f] = (acc[f] || 0) + 1;
+                return acc;
+            }, {})
+        );
+        apuestaDiv = `
+          <div class="apuesta-encima">
+            ${desglose
+                .map(
+                    ([valor, cantidad]) =>
+                        `${cantidad}x <img src="/images/moneda${valor}.png" alt="moneda${valor}" class="icono-moneda">`
+                )
+                .join(' + ')}
+          </div>
+        `;
     }
 
     silla.innerHTML = `
-        <div class="info">
-            <div class="personal-container">
-                <p class="name">${jugador.nombre}</p>
-                <img src="${
-    jugador.tipo === 'Crupier'
-        ? '/images/dealer.png'
-        : (jugador.imagenPerfil || '/images/default-user.png')
-}" alt="${jugador.tipo}" class="img-${jugador.tipo}">
-            </div>
-            <p class="puntos">
-                Puntos: ${(gameState.state.reiniciando || jugador.socketId === currentSocketId) ? jugador.puntaje : "?"}
-            </p>
-            ${jugador.tipo === "Player" ? `
-                <p class="apuesta">Apuesta: ${jugador.apuesta} monedas</p>
-                ${jugador.fichasApostadas && jugador.fichasApostadas.length > 0
-                    ? `<p class="fichas">Fichas: ${
-                        Object.entries(jugador.fichasApostadas.reduce((acc, f) => {
-                            acc[f] = (acc[f] || 0) + 1; return acc;
-                        }, {})).map(([valor, cantidad]) => `${cantidad}x${valor}`).join(", ")
-                    }</p>`
-                    : ""
-                }
-            ` : ""}
+      ${apuestaDiv}
+      <div class="jugador-info-row">
+        <div class="jugador-avatar">
+          <img src="${
+            jugador.tipo === 'Crupier'
+              ? '/images/dealer.png'
+              : (jugador.imagenPerfil || '/images/default-user.png')
+          }" alt="${jugador.tipo}" class="img-${jugador.tipo}">
+          <div class="jugador-nombre">${jugador.nombre}</div>
+          <div class="apuesta-pequena">Apuesta: ${jugador.apuesta ?? 0}</div>
         </div>
-        <div class="cartas"></div>
+        <div class="jugador-cartas">
+          <div class="cartas"></div>
+        </div>
+      </div>
+      <div class="puntos">
+        Puntos: ${mostrarPuntos ? jugador.puntaje : "?"}
+      </div>
     `;
 
+    // Cartas
     const cartasContainer = silla.querySelector(".cartas");
     jugador.cartas.forEach((carta, index) => {
         const card = document.createElement("div");
         card.classList.add("cards");
-
-        // Mostrar todas las cartas si la partida está en reinicio (ronda finalizada)
         if (gameState.state.reiniciando) {
             card.textContent = `${carta.numero} ${iconosPalos[carta.palo]}`;
-        }
-        // Si el jugador es el usuario actual, muestra todas sus cartas
-        else if (jugador.socketId === currentSocketId) {
+        } else if (jugador.tipo === "Crupier" && index === 0) {
             card.textContent = `${carta.numero} ${iconosPalos[carta.palo]}`;
-        }
-        // Si es el crupier, solo muestra la primera carta
-        else if (jugador.tipo === "Crupier" && index === 0) {
+        } else if (esMio) {
             card.textContent = `${carta.numero} ${iconosPalos[carta.palo]}`;
-        }
-        // Oculta las cartas de los demás jugadores
-        else {
+        } else {
             card.textContent = "❓";
         }
-
         cartasContainer.appendChild(card);
     });
-
-
-    if (jugador.tipo === "Player" && jugador.nombre === currentUsername && gameState.state.empezada) {
-        let botonesContainer = silla.querySelector(".botones-container");
-        if (!botonesContainer) {
-            botonesContainer = document.createElement("div");
-            botonesContainer.classList.add("botones-container");
-            silla.appendChild(botonesContainer);
-        }
-        botonesContainerGlobal = botonesContainer;
-        renderizarBotones(["btnPedirCarta", "btnPlantarse"], botonesContainerGlobal, jugador.plant);
-    }
 
     return silla;
 }
@@ -430,18 +477,24 @@ function renderTotalApuestas(totalApuestas) {
     });
 
       socket.on("cuentaFinalizada", (mensaje) => {
-        let timerDisplay = document.getElementById("timerDisplay");
-        if (!timerDisplay) {
-            timerDisplay = document.createElement("div");
-            timerDisplay.id = "timerDisplay";
-            document.body.appendChild(timerDisplay);
-        }
-        timerDisplay.innerHTML = mensaje;
-        // Elimina el temporizador después de 2 segundos
-        setTimeout(() => {
-            if (timerDisplay) timerDisplay.remove();
-        }, 2000);
-    });
+    let timerDisplay = document.getElementById("timerDisplay");
+    if (!timerDisplay) {
+        timerDisplay = document.createElement("div");
+        timerDisplay.id = "timerDisplay";
+        document.body.appendChild(timerDisplay);
+    }
+    timerDisplay.innerHTML = mensaje;
+    // Permitir mostrar botones tras la cuenta atrás de apostar
+    puedeMostrarBotones = true;
+
+    // Elimina el temporizador después de 2 segundos
+    setTimeout(() => {
+        if (timerDisplay) timerDisplay.remove();
+    }, 2000);
+
+    // Vuelve a renderizar para mostrar los botones si es necesario
+    renderGame(gameStateGlobal);
+});
 
 socket.on("bloquearAcciones", (bloquear) => {
     // Bloquear botones de acción

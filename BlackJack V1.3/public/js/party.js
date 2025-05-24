@@ -241,13 +241,26 @@ export class Partida {
         this.jugarCrupier(j);
     }
 
-    jugarCrupier(j) {
+    jugarCrupier() {
         const posCrupier = this.jugadores.length - 1;
-        if (this.plantados == this.jugadores.length - 1) {
-            while (this.jugadores[posCrupier].puntaje < 17 || (this.jugadores[j].puntaje > this.jugadores[posCrupier].puntaje && this.jugadores[j].puntaje <= 21)) {
+        if (this.plantados === this.jugadores.length - 1) {
+            // Filtra los jugadores plantados que no se han pasado
+            const jugadoresValidos = this.jugadores.filter(j =>
+                j.tipo === "Player" && j.plant && j.puntaje <= 21
+            );
+            if (jugadoresValidos.length === 0) return; // Nadie válido a superar
+
+            // El crupier intenta superar al mayor puntaje de los jugadores válidos
+            let maxPuntaje = Math.max(...jugadoresValidos.map(j => j.puntaje));
+            while (
+                this.jugadores[posCrupier].puntaje < 17 ||
+                (
+                    this.jugadores[posCrupier].puntaje < maxPuntaje &&
+                    this.jugadores[posCrupier].puntaje < 21
+                )
+            ) {
                 this.pedirCarta(posCrupier);
             }
-            
         }
     }
 
@@ -335,29 +348,27 @@ export class Partida {
 
     async reiniciar() {
         console.log("Reiniciando partida...");
-        await new Promise(resolve => setTimeout(resolve, 20000));
-            const crupier = this.jugadores.find(j => j.tipo === "Crupier");
-            if (crupier) {
-                crupier.cartas = [];
-                crupier.puntaje = 0;
+        // Espera 20 segundos antes de reiniciar (esto lo controla el backend, puedes quitarlo aquí)
+        // await new Promise(resolve => setTimeout(resolve, 20000));
+        const crupier = this.jugadores.find(j => j.tipo === "Crupier");
+        if (crupier) {
+            crupier.cartas = [];
+            crupier.puntaje = 0;
+        }
+        this.jugadores.forEach(player => {
+            player.puntaje = 0;
+            player.cartas = [];
+            player.plant = false;
+            if(player.tipo === "Player") {
+                player.apuesta = 0;
             }
-            
-            this.jugadores.forEach(player => {
-                player.puntaje = 0;
-                player.cartas = [];
-                player.plant = false;
-                if(player.tipo === "Player") {
-                    player.apuesta = 0;
-                }
-                
-            });
-            this.baraja = new Baraja();
-            this.plantados = 0;
-            this.empezada = false;
-            this.reiniciada = true;
-            this.totalApuestas = 0;
-
-            this.iniciarNuevoJuego();
+        });
+        this.baraja = new Baraja();
+        this.plantados = 0;
+        this.empezada = false;
+        this.reiniciada = true;
+        this.totalApuestas = 0;
+        // Quita la llamada a this.iniciarNuevoJuego();
     }
         
 

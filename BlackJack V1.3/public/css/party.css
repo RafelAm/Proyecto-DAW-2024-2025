@@ -1,3 +1,4 @@
+@charset "UTF-8";
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -41,15 +42,99 @@ body .tbl {
   width: 65%;
 }
 body .mesa {
+  position: relative;
+  width: 90vw;
+  height: 70vh;
+  margin: 60px auto 0 auto;
+  background: radial-gradient(ellipse at center, #388e3c 60%, #1b5e20 100%);
+  border-radius: 50% 50% 45% 45%/60% 60% 40% 40%;
+  box-shadow: 0 8px 40px #222;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: visible;
+  padding: 30px 0;
+}
+body .mesa .zona-crupier {
   position: absolute;
-  top: 55%;
+  top: 0;
   left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+body .mesa .zona-jugadores {
+  position: absolute;
   width: 100%;
-  height: 90%;
-  transform: translate(-50%, -50%);
+  height: 100%;
+  pointer-events: none;
+}
+body .mesa .jugador-pos-1, body .mesa .jugador-pos-2, body .mesa .jugador-pos-3, body .mesa .jugador-pos-4 {
+  position: absolute;
+  bottom: 5%;
+  width: 20%;
+  min-width: 180px;
+  max-width: 220px;
+  left: 10%;
+  /* Ajusta left según el número de jugadores para repartirlos */
+}
+body .mesa .jugador-pos-1 {
+  left: 0.5%;
+  bottom: 10%;
+}
+body .mesa .jugador-pos-2 {
+  left: 50%;
+  bottom: 2%;
+  transform: translateX(-50%);
+}
+body .mesa .jugador-pos-3 {
+  right: 0.5%;
+  bottom: 10%;
+}
+body .mesa .jugador-pos-4 {
+  left: 50%;
+  top: 2%;
+  transform: translateX(-50%);
+}
+body .mesa .info {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1333333333);
+  text-align: center;
+}
+body .mesa .puntos {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #222;
+  background: #fffde7;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin: 18px 0 0 0;
+  display: inline-block;
+  position: absolute;
+}
+body .mesa .apuesta, body .mesa .fichas {
+  font-size: 1em;
+  color: #333;
+  margin: 2px 0;
+}
+body .mesa .botones-container {
+  margin-top: 10px;
   display: flex;
   justify-content: center;
-  align-items: center;
+  gap: 10px;
+}
+body .mesa .img-Crupier, body .mesa .img-Player {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #388e3c;
+  background: #fff;
+  -o-object-fit: cover;
+     object-fit: cover;
+  margin-bottom: 5px;
 }
 body .Crupier,
 body .Player {
@@ -71,7 +156,6 @@ body .Player .info .personal-container .name {
 body .Crupier .cartas,
 body .Player .cartas {
   position: absolute;
-  left: 20%;
 }
 body .Crupier .botones-container,
 body .Player .botones-container {
@@ -93,27 +177,6 @@ body .Player .botones-container button {
   font-weight: bold;
   border-radius: 5%;
   font-size: 1em;
-}
-body .Player:nth-child(1) {
-  bottom: -10%;
-  top: 70%;
-  left: 50%;
-  transform: translateX(-50%);
-}
-body .Player:nth-child(2) {
-  left: 15%;
-  top: 50%;
-  transform: translateY(-50%);
-}
-body .Player:nth-child(3) {
-  top: 50%;
-  left: 75%;
-  transform: translateY(-50%);
-}
-body .Player:nth-child(3) .cartas {
-  position: absolute;
-  top: 120%;
-  left: 0%;
 }
 body .img-Crupier {
   width: 10vw;
@@ -191,7 +254,6 @@ body .cartas {
   display: flex;
   flex-direction: row;
   position: absolute;
-  left: 30%;
 }
 body .loser {
   color: red;
@@ -200,47 +262,236 @@ body .loser {
   margin: 0 0 2% 0;
 }
 body .info {
-  display: flex;
-}
-body .info p {
-  font-family: "Lobster";
-  font-size: 1.7rem;
-  margin: 0;
-  font-weight: bold;
-  color: black;
-}
-body .info .name {
   width: 100%;
-  text-align: center;
-  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 body .personal-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 33%;
+  width: 100%;
 }
-body #apuestaContainer {
+body .name {
+  width: 100%;
+  text-align: center;
+  background-color: white;
+  font-family: "Lobster";
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: black;
+  margin-bottom: 4px;
+  border-radius: 6px;
+}
+body .puntos {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #222;
+  background: #fffde7;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin: 18px 0 0 0;
+  display: inline-block;
+}
+body .apuesta, body .fichas {
+  font-size: 1em;
+  color: #333;
+  margin: 2px 0;
+}
+body .cartas {
   display: flex;
-  align-self: center;
+  align-items: center;
+  margin: 8px 0;
+  width: 100%;
+}
+body .botones-container {
+  margin-top: 10px;
+  display: flex;
   justify-content: center;
-  justify-self: center;
+  gap: 10px;
+  width: 100%;
+}
+body .jugador-box {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(34, 34, 34, 0.5333333333);
+  padding: 16px 18px 14px 18px;
+  min-width: 320px;
+  max-width: 480px;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   position: absolute;
+  top: auto;
+  left: auto;
+  transform: none;
+  overflow: visible;
+}
+body .jugador-box.yo-mismo {
+  position: relative !important;
+  left: unset !important;
+  bottom: unset !important;
+  transform: none !important;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(34, 34, 34, 0.5333333333);
+  padding: 16px 18px 14px 18px;
+  min-width: 400px;
+  max-width: 520px;
+  width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: flex-start;
+}
+body .jugador-box .puntos {
+  position: absolute;
+  bottom: 18px;
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #222;
+  background: #fffde7;
+  border-radius: 6px;
+  padding: 6px 16px;
+  margin: 0;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1333333333);
+  z-index: 3;
+}
+body .jugador-propio-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Botones alineados a la derecha */
+  justify-content: flex-start;
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: auto;
+  gap: 0;
+}
+body .jugador-info-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
+  margin-bottom: 10px;
+}
+body .jugador-info-row .jugador-avatar {
+  width: 30%;
+  display: flex;
+  flex-direction: column;
   align-items: center;
 }
-body .yo-mismo {
-  z-index: 2;
-  left: 50% !important;
-  top: 70% !important;
-  transform: translateX(-50%) !important;
+body .jugador-cartas {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  margin-left: 12px;
+  width: 100%; /* Ocupa todo el ancho del contenedor */
+  box-sizing: border-box;
 }
-body .jugador-en-turno {
-  box-shadow: 0 0 25px 8px #ffe600, 0 0 10px 2px #ffb300;
-  border: 3px solid #ffe600;
-  z-index: 3;
+body .cards {
+  width: 50px;
+  height: 70px;
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: #222;
+}
+body .jugador-botones {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-top: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+body .jugador-botones button {
+  background: #ff6f61;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 120px;
+  text-align: center;
+}
+body .jugador-botones button:hover {
+  background: #d32f2f;
+}
+body .apuesta-total {
+  font-size: 1.1em;
+  color: #388e3c;
+  font-weight: bold;
+  background: #e8f5e9;
+  border-radius: 6px;
+  padding: 4px 12px;
+  margin-top: 10px;
+  margin-bottom: 0;
+  text-align: center;
+  width: 100%;
+}
+body .apuesta-pequena {
+  font-size: 0.95em;
+  color: #388e3c;
+  font-weight: normal;
+  background: none;
+  border-radius: 4px;
+  padding: 0;
+  margin-top: 2px;
+  margin-bottom: 0;
+  text-align: center;
+}
+body .jugador-propio-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: auto;
+  gap: 24px;
+}
+body .apuesta-encima {
+  position: absolute;
+  bottom: 100%;
+  background: #fffde7;
+  color: #222;
+  font-weight: bold;
+  font-size: 1.1em;
+  border-radius: 12px;
+  padding: 4px 14px 4px 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1333333333);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  min-width: 60px;
+}
+body .icono-moneda {
+  width: 40px;
+  height: 40px;
+  vertical-align: middle;
+}
+body .jugador-box {
+  position: relative;
 }
 
 body::before {

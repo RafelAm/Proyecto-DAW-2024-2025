@@ -13,6 +13,9 @@
   box-sizing: border-box;
   z-index: 4000;
 }
+.navbar .logout-mobile {
+  display: none;
+}
 .navbar .logo {
   display: flex;
   align-items: center;
@@ -122,11 +125,14 @@
   display: block;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1280px) {
   .navbar {
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
+  .navbar .logout-mobile {
+    display: block;
   }
   .navbar .logo {
     display: none;
@@ -162,5 +168,38 @@
   }
   .navbar .nav-links.active {
     display: flex;
+  }
+  .logout-mobile {
+    display: block;
+    width: 100%;
+  }
+  .logout-mobile form {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .logout-mobile button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 10px 0;
+    width: 100%;
+    text-align: center;
+    transition: color 0.2s;
+  }
+  .logout-mobile button:hover {
+    color: #ffe600;
+    text-decoration: underline;
+  }
+  .logout-desktop {
+    display: none !important;
+  }
+  .profile-menu .dropdown {
+    display: none !important;
   }
 }/*# sourceMappingURL=header.css.map */

@@ -12,7 +12,9 @@
     color: white;
     box-sizing: border-box;
     z-index: 4000; // <--- Añade o sube este valor
-
+    .logout-mobile {
+        display: none;
+    }
     .logo {
         display: flex;
         align-items: center;
@@ -132,13 +134,16 @@
     }
 }
 
+
 // 📱 Ajustes para móviles y tablets
-@media (max-width: 768px) {
+@media (max-width: 1280px) {
     .navbar {
         display: flex;
         flex-direction: column;
         align-items: center;
-
+        .logout-mobile {
+            display: block;
+        }
         .logo {
             display: none;
         }
@@ -179,5 +184,40 @@
         .nav-links.active {
             display: flex;
         }
+    }
+
+    .logout-mobile {
+        display: block;
+        width: 100%;
+        form {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+            transition: color 0.2s;
+        }
+        button:hover {
+            color: #ffe600;
+            text-decoration: underline;
+        }
+    }
+
+    .logout-desktop {
+        display: none !important;
+    }
+    .profile-menu .dropdown {
+        display: none !important;
     }
 }

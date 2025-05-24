@@ -6,26 +6,31 @@
     <button class="menu-toggle">☰</button>
     <ul class="nav-links">
         <li><a href="/">Inicio</a></li>
-        <li><a href="#partidas">Partidas</a></li>
-        <li><a href="#howToPlay">¿Como jugar?</a></li>
-        <li><a href="#">Contacto</a></li>
+        <li><a href="/#game-list">Partidas</a></li>
+        <li><a href="/#howToPlay">¿Como jugar?</a></li>
         <li><a href="/shop">Tienda</a></li>
         <% if (isAdmin) { %>
             <li><a href="/dashboard">Dashboard</a></li>
         <% } %>
  <% if (loggedIn) { %>
+                <li class="logout-mobile">
+                <form action="/logout" method="POST">
+                    <button type="submit">Cerrar Sesión</button>
+                </form>
+            </li>
             <li class="profile-menu">
                 <a href="/profile/<%= username %>">
                     <img src="<%= profileImage || '/images/default-user.png' %>" alt="Perfil" class="profile-img">
                 </a>
                 <ul class="dropdown">
-                    <li>
+                    <li class="logout-desktop">
                         <form action="/logout" method="POST">
                             <button type="submit">Cerrar Sesión</button>
                         </form>
                     </li>
                 </ul>
             </li>
+
         <% } else { %>
             <li><a href="/login">Iniciar Sesión</a></li>
             <li><a href="/register">Registrarse</a></li>
