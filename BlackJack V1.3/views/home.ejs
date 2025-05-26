@@ -33,14 +33,8 @@
         <button class="random-game">Partida Aleatoria</button>
     </section>
 
-    <!-- Sección ¿Cómo jugar? -->
-    <section class="how-to-play" id="howToPlay">
-        <h2>¿Cómo Jugar?</h2>
-        <video controls>
-            <source src="tutorial.mp4" type="video/mp4">
-            Tu navegador no soporta videos.
-        </video>
-    </section>
+
+
 
     <!-- Mini preview de la tienda -->
     <section class="shop-preview">
@@ -99,7 +93,7 @@ fetch("/game")
                     <h4>Partida ${game.ruta}</h4>
                     <p class="players">Jugadores: ${game.jugadores.length}</p>
                     <button class="join-game" data-id="${game.ruta}">
-                        <span style="font-size:1.1em;vertical-align:middle;">&#128065;</span> Ver
+                        <span style="font-size:1.5em;vertical-align:middle;">&#128065;</span>
                     </button>
                 </div>
             `;

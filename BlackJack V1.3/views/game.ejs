@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/css/party.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +15,6 @@
   </head>
   <body>
     <%- include('partials/header') %>
-    <img class="tbl" src="/images/table.png" alt="Mesa de póker">
     <div class="mesa">
     <div class="zona-crupier">
         <!-- Crupier -->
@@ -27,20 +27,22 @@
     </div>
 </div>
 
-    
-    <!--<h1>Chat</h1>
+<div id="chat-container">
+    <h2 class="chat-titulo">Chat</h2>
     <ul id="messages"></ul>
-    <form id="form" action="">
-        <input id="input" autocomplete="off" />
-        <button>Enviar</button>
-    </form>-->
+    <form id="form" autocomplete="off">
+        <input id="input" autocomplete="off" placeholder="Escribe un mensaje..." />
+        <button type="submit">Enviar</button>
+    </form>
+</div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
 const socket = io();
 let gameStateGlobal;
 let currentUsername = "";
 let puedeMostrarBotones = false;
-// Actualizar el estado del juego
+
+
 socket.on("gameState", (gameState) => {
     if (!gameState || !gameState.state) {
         console.error("Error: gameState no está definido correctamente.");
@@ -50,9 +52,20 @@ socket.on("gameState", (gameState) => {
     gameStateGlobal = gameState;
     currentSocketId = gameState.currentSocketId;
     currentUsername = gameState.currentUsername;
-
     renderGame(gameState);
-    renderizarBotonesInicio(currentUsername);
+
+    // AÑADE o MANTIENE esto:
+    renderTotalApuestas(gameState.state.totalApuestas);
+
+    // Solo muestra el botón de unirse si el usuario NO está en la partida
+    const yaEnPartida = gameState.state.jugadores.some(j => j.nombre === currentUsername);
+    if (!yaEnPartida) {
+        renderizarBotonesInicio(currentUsername);
+    } else {
+        // Oculta el botón si ya está en la partida
+        const btnInicio = document.getElementById("botonesInicio");
+        if (btnInicio) btnInicio.style.display = "none";
+    }
 
     // Volver a renderizar botones si están en gameState
     if (gameState.botonesConfig && gameState.botonesConfig.length > 0) {
@@ -61,6 +74,8 @@ socket.on("gameState", (gameState) => {
             renderizarBotones(globalBotonesConfig, botonesContainerGlobal, false);
         }
     }
+
+
 });
 
 
@@ -131,25 +146,50 @@ let fichasApostadas = [];
 
 function renderizarFormularioApuesta(jugador) {
     let apuestaContainer = document.getElementById("apuestaContainer");
-    if (!apuestaContainer) {
-        apuestaContainer = document.createElement("div");
-        apuestaContainer.id = "apuestaContainer";
-        document.body.appendChild(apuestaContainer);
-    }
+    if (apuestaContainer) apuestaContainer.remove();
+
+    apuestaContainer = document.createElement("div");
+    apuestaContainer.id = "apuestaContainer";
+    apuestaContainer.className = "contenedor-apuesta";
     apuestaContainer.style.display = "block";
 
     apuestaContainer.innerHTML = `
         <div id="fichasContainer">
-            <button class="ficha" data-valor="5">5</button>
-            <button class="ficha" data-valor="10">10</button>
-            <button class="ficha" data-valor="20">20</button>
-            <button class="ficha" data-valor="50">50</button>
-            <button class="ficha" data-valor="100">100</button>
+            <button class="ficha" data-valor="5" title="5 monedas">
+                <img src="/images/moneda5.png" class="icono-boton-ficha" alt="5">
+            </button>
+            <button class="ficha" data-valor="10" title="10 monedas">
+                <img src="/images/moneda10.png" class="icono-boton-ficha" alt="10">
+            </button>
+            <button class="ficha" data-valor="20" title="20 monedas">
+                <img src="/images/moneda20.png" class="icono-boton-ficha" alt="20">
+            </button>
+            <button class="ficha" data-valor="50" title="50 monedas">
+                <img src="/images/moneda50.png" class="icono-boton-ficha" alt="50">
+            </button>
+            <button class="ficha" data-valor="100" title="100 monedas">
+                <img src="/images/moneda100.png" class="icono-boton-ficha" alt="100">
+            </button>
         </div>
         <div id="apuestaResumen"></div>
-        <button id="resetApuesta">Resetear</button>
-        <button id="enviarApuesta">Apostar</button>
+        <div class="apuesta-botones">
+            <button id="resetApuesta" type="button">
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button id="enviarApuesta" type="button">
+                <i class="fa-solid fa-check"></i>
+            </button>
+        </div>
     `;
+
+    // === NUEVO: Insertar dentro del jugador propio ===
+    const jugadorBox = document.querySelector('.jugador-box.yo-mismo');
+    if (jugadorBox) {
+        jugadorBox.insertBefore(apuestaContainer, jugadorBox.firstChild);
+    } else {
+        // Fallback: si no existe, lo añade al body (no debería pasar)
+        document.body.appendChild(apuestaContainer);
+    }
 
     apuestaActual = 0;
     fichasApostadas = [];
@@ -238,10 +278,37 @@ function renderGame(gameState) {
     ordenFinal.forEach((jugador, idx) => {
         const silla = crearSillaJugador(jugador, jugador.socketId === currentSocketId, gameState);
 
+        // Asigna las posiciones absolutas según el orden
         if (jugador.nombre === currentUsername && puedeMostrarBotones) {
-            // Crea un contenedor vertical para el jugador propio y sus botones
             let row = document.createElement("div");
             row.className = "jugador-propio-col";
+            silla.classList.add("jugador-pos-2"); // Centro abajo
+
+            // --- NUEVO: Añadir apuestaContainer encima del jugador propio ---
+            let apuestaContainer = document.getElementById("apuestaContainer");
+            if (apuestaContainer) apuestaContainer.remove(); // Evita duplicados
+
+            // Solo mostrar si corresponde (puedes controlar esto con una variable)
+            if (gameState.mostrarFormularioApuesta) {
+                apuestaContainer = document.createElement("div");
+                apuestaContainer.id = "apuestaContainer";
+                apuestaContainer.className = "contenedor-apuesta";
+                apuestaContainer.innerHTML = `
+                    <div id="fichasContainer">
+                        <button class="ficha" data-valor="5"><img src="/images/moneda5.png" class="icono-boton-ficha" alt="5"></button>
+                        <button class="ficha" data-valor="10"><img src="/images/moneda10.png" class="icono-boton-ficha" alt="10"></button>
+                        <button class="ficha" data-valor="20"><img src="/images/moneda20.png" class="icono-boton-ficha" alt="20"></button>
+                        <button class="ficha" data-valor="50"><img src="/images/moneda50.png" class="icono-boton-ficha" alt="50"></button>
+                        <button class="ficha" data-valor="100"><img src="/images/moneda100.png" class="icono-boton-ficha" alt="100"></button>
+                    </div>
+                    <div id="apuestaResumen"></div>
+                    <button id="resetApuesta">Resetear</button>
+                    <button id="enviarApuesta">Apostar</button>
+                `;
+                // Inserta el contenedor de apuesta como primer hijo del jugador propio
+                silla.insertBefore(apuestaContainer, silla.firstChild);
+            }
+
             row.appendChild(silla);
 
             let botonesContainer = document.createElement("div");
@@ -255,12 +322,27 @@ function renderGame(gameState) {
                 renderizarBotones(globalBotonesConfig, botonesContainerGlobal, false);
             }
         } else {
+            // Rivales: izquierda y derecha
+            if (ordenFinal.length === 2) {
+                // Solo un rival
+                silla.classList.add("jugador-pos-1");
+            } else if (ordenFinal.length === 3) {
+                if (idx === 0) silla.classList.add("jugador-pos-1"); // Izquierda
+                if (idx === 2) silla.classList.add("jugador-pos-3"); // Derecha
+            }
             mesa.appendChild(silla);
         }
     });
 
     renderTotalApuestas(gameState.state.totalApuestas);
     gestionarBotonesInterfaz(gameState);
+
+    // Mostrar el balance del usuario actual fuera del recuadro del jugador
+    const miJugador = gameState.state.jugadores.find(j => j.nombre === currentUsername);
+    const balanceDiv = document.getElementById("balanceUsuario");
+    if (miJugador && balanceDiv) {
+        balanceDiv.textContent = `${miJugador.balance ?? 0} monedas`;
+    }
 }
 
 // Nueva función para crear la silla de cada jugador
@@ -269,17 +351,16 @@ function crearSillaJugador(jugador, esMio, gameState) {
     silla.classList.add(jugador.tipo, "jugador-box");
     if (esMio) silla.classList.add("yo-mismo");
 
-    // Mostrar puntos solo si es el usuario propio o la ronda terminó
     let mostrarPuntos = (esMio || gameState.state.reiniciando);
 
-    // --- NUEVO: Div de apuesta encima ---
+    // --- SOLO muestra las fichas si NO está reiniciando y hay fichas apostadas ---
     let apuestaDiv = "";
     if (
         jugador.tipo === "Player" &&
+        !gameState.state.reiniciando && // Si está reiniciando, NO entra aquí
         jugador.fichasApostadas &&
         jugador.fichasApostadas.length > 0
     ) {
-        // Cuenta cuántas fichas de cada valor
         const desglose = Object.entries(
             jugador.fichasApostadas.reduce((acc, f) => {
                 acc[f] = (acc[f] || 0) + 1;
@@ -287,16 +368,16 @@ function crearSillaJugador(jugador, esMio, gameState) {
             }, {})
         );
         apuestaDiv = `
-          <div class="apuesta-encima">
-            ${desglose
-                .map(
-                    ([valor, cantidad]) =>
-                        `${cantidad}x <img src="/images/moneda${valor}.png" alt="moneda${valor}" class="icono-moneda">`
-                )
-                .join(' + ')}
-          </div>
-        `;
-    }
+      <div class="apuesta-encima">
+        ${desglose
+            .map(
+                ([valor, cantidad]) =>
+                    `${cantidad}x <img src="/images/moneda${valor}.png" alt="moneda${valor}" class="icono-moneda">`
+            )
+            .join(' + ')}
+      </div>
+    `;
+    } // Si está reiniciando, apuestaDiv será ""
 
     silla.innerHTML = `
       ${apuestaDiv}
@@ -336,12 +417,19 @@ function crearSillaJugador(jugador, esMio, gameState) {
         cartasContainer.appendChild(card);
     });
 
+    // Nueva lógica: agregar clase 'jugador-en-turno' si es el turno del jugador
+    if (
+        gameState.turnoActual !== undefined &&
+        gameState.state.jugadores[gameState.turnoActual]?.nombre === jugador.nombre
+    ) {
+        silla.classList.add("jugador-en-turno");
+    }
+
     return silla;
 }
 function renderizarBotones(botonesConfig, container, deshabilitado = false) {
     container.innerHTML = "";
 
-    // Validación: Si `botonesConfig` no es un array, asignamos botones por defecto
     const botones = Array.isArray(botonesConfig) ? botonesConfig : ["btnPedirCarta", "btnPlantarse"];
 
     botones.forEach((btnId) => {
@@ -352,16 +440,23 @@ function renderizarBotones(botonesConfig, container, deshabilitado = false) {
                 button.textContent = "Pedir Carta";
                 button.id = "btnPedirCarta";
                 button.classList.add("more");
-                button.addEventListener("click", () => socket.emit("requestCard", { roomId }));
+                button.addEventListener("click", () => {
+                    socket.emit("requestCard", { roomId });
+                    clearInterval(window.turnoCountdownInterval);
+                    ocultarNotificacionCentrada();
+                });
                 break;
             case "btnPlantarse":
                 button.textContent = "Plantarse";
                 button.id = "btnPlantarse";
                 button.classList.add("plant");
-                button.addEventListener("click", () => socket.emit("plantarse", { roomId }));
+                button.addEventListener("click", () => {
+                    socket.emit("plantarse", { roomId });
+                    clearInterval(window.turnoCountdownInterval);
+                    ocultarNotificacionCentrada();
+                });
                 break;
             default:
-                console.warn("Identificador de botón no reconocido:", btnId);
                 button.textContent = "Botón desconocido";
         }
 
@@ -391,11 +486,11 @@ function renderizarBotonesInicio(usuario) {
 
         switch (btnId) {
             case "btnUnirsePartida":
-                button.textContent = "Unirse a la partida";
+                button.textContent = "Sentarse en la mesa"; // Cambia aquí el texto
                 button.classList.add("joinGame");
                 button.addEventListener("click", () => {
                     socket.emit("addPlayer", { roomId, username: usuario, socketId: currentSocketId });
-                    button.style.display = "none"; // Oculta el botón tras unirse
+                    button.style.display = "none";
                 });
                 break;
         }
@@ -418,9 +513,18 @@ function renderTotalApuestas(totalApuestas) {
     if (!totalApuestasDiv) {
         totalApuestasDiv = document.createElement("div");
         totalApuestasDiv.id = "totalApuestas";
-        document.body.appendChild(totalApuestasDiv);
+        totalApuestasDiv.className = "total-apuestas-usuario";
+        // Inserta justo después del balance
+        const balanceDiv = document.getElementById("balanceUsuario");
+        if (balanceDiv && balanceDiv.nextSibling) {
+            balanceDiv.parentNode.insertBefore(totalApuestasDiv, balanceDiv.nextSibling);
+        } else if (balanceDiv) {
+            balanceDiv.parentNode.appendChild(totalApuestasDiv);
+        } else {
+            document.body.appendChild(totalApuestasDiv);
+        }
     }
-    totalApuestasDiv.innerHTML = `<p>Total Apuestas en la Partida: ${totalApuestas} monedas</p>`;
+    totalApuestasDiv.innerHTML = `<span class="icono-apuesta">🎲</span> Total apuestas: <b>${totalApuestas}</b> monedas`;
 }
 
       // Escuchar errores enviados desde el servidor
@@ -444,12 +548,7 @@ function renderTotalApuestas(totalApuestas) {
     }
       // Escuchar el evento de iniciar cuenta desde el servidor
       socket.on("iniciarCuenta", (duracion) => {
-        let timerDisplay = document.getElementById("timerDisplay");
-        if (!timerDisplay) {
-            timerDisplay = document.createElement("div");
-            timerDisplay.id = "timerDisplay";
-            document.body.appendChild(timerDisplay);
-        }
+puedeMostrarBotones = false; // <--- Añade esto
 
         let fase = (duracion === 20) ? "apostar" : "unirse";
         let mensaje = (fase === "apostar")
@@ -457,40 +556,12 @@ function renderTotalApuestas(totalApuestas) {
             : "Tiempo restante para unirse: ";
 
         let segundosRestantes = duracion;
-        timerDisplay.innerHTML = `${mensaje}${segundosRestantes} segundos.`;
 
         // Limpia cualquier countdown anterior
         if (window.countdownInterval) clearInterval(window.countdownInterval);
-
-        window.countdownInterval = setInterval(() => {
-            segundosRestantes--;
-            if (segundosRestantes <= 0) {
-                clearInterval(window.countdownInterval);
-                // Solo actualiza el mensaje, NO elimines el timerDisplay aquí
-                timerDisplay.innerHTML = (fase === "apostar")
-                    ? "El tiempo para apostar ha finalizado."
-                    : "El tiempo para unirse ha finalizado.";
-            } else {
-                timerDisplay.innerHTML = `${mensaje}${segundosRestantes} segundos.`;
-            }
-        }, 1000);
     });
 
       socket.on("cuentaFinalizada", (mensaje) => {
-    let timerDisplay = document.getElementById("timerDisplay");
-    if (!timerDisplay) {
-        timerDisplay = document.createElement("div");
-        timerDisplay.id = "timerDisplay";
-        document.body.appendChild(timerDisplay);
-    }
-    timerDisplay.innerHTML = mensaje;
-    // Permitir mostrar botones tras la cuenta atrás de apostar
-    puedeMostrarBotones = true;
-
-    // Elimina el temporizador después de 2 segundos
-    setTimeout(() => {
-        if (timerDisplay) timerDisplay.remove();
-    }, 2000);
 
     // Vuelve a renderizar para mostrar los botones si es necesario
     renderGame(gameStateGlobal);
@@ -507,18 +578,6 @@ socket.on("bloquearAcciones", (bloquear) => {
     const betForm = document.getElementById("betForm");
     if (betForm) betForm.style.display = bloquear ? "none" : "block";
 
-    // Mostrar mensaje de bloqueo si aplica
-    let mensajeBloqueo = document.getElementById("mensajeBloqueo");
-    if (bloquear) {
-        if (!mensajeBloqueo) {
-            mensajeBloqueo = document.createElement("div");
-            mensajeBloqueo.id = "mensajeBloqueo";
-            mensajeBloqueo.textContent = "Esperando jugadores... La partida comenzará pronto.";
-            document.body.appendChild(mensajeBloqueo);
-        }
-    } else {
-        if (mensajeBloqueo) mensajeBloqueo.remove();
-    }
 });
 
 // Gestionar botones de acción
@@ -543,6 +602,171 @@ function gestionarBotonesInterfaz(gameState) {
 
 socket.on("info", (msg) => {
     alert(msg); 
+});
+
+// Función reutilizable para mostrar notificaciones centradas y bonitas
+function mostrarNotificacionCentrada(texto) {
+    // Elimina cualquier notificación anterior
+    let notif = document.getElementById("notificacionCentrada");
+    if (notif) notif.remove();
+
+    notif = document.createElement("div");
+    notif.id = "notificacionCentrada";
+    notif.className = "notificacion-centrada";
+    notif.innerHTML = texto;
+
+    // Inserta dentro de la mesa
+    const mesa = document.querySelector(".mesa");
+    if (mesa) {
+        mesa.appendChild(notif);
+    } else {
+        document.body.appendChild(notif); // Fallback
+    }
+}
+
+function ocultarNotificacionCentrada() {
+    let notif = document.getElementById("notificacionCentrada");
+    if (notif) notif.style.display = "none";
+}
+
+// Notificación de cuenta atrás
+socket.on("iniciarCuenta", (duracion) => {
+    let fase = (duracion === 20) ? "apostar" : "unirse";
+    let mensaje = (fase === "apostar")
+        ? "Tiempo restante para apostar: "
+        : "Tiempo restante para unirse: ";
+
+    let segundosRestantes = duracion;
+    mostrarNotificacionCentrada(`${mensaje}<span class="timer-num">${segundosRestantes}</span> segundos.`);
+
+    if (window.countdownInterval) clearInterval(window.countdownInterval);
+
+    window.countdownInterval = setInterval(() => {
+        segundosRestantes--;
+        if (segundosRestantes <= 0) {
+            clearInterval(window.countdownInterval);
+            mostrarNotificacionCentrada(
+                (fase === "apostar")
+                    ? "El tiempo para apostar ha finalizado."
+                    : "El tiempo para unirse ha finalizado."
+            );
+            setTimeout(ocultarNotificacionCentrada, 2000);
+        } else {
+            mostrarNotificacionCentrada(`${mensaje}<span class="timer-num">${segundosRestantes}</span> segundos.`);
+        }
+    }, 1000);
+});
+
+socket.on("cuentaFinalizada", (mensaje) => {
+    mostrarNotificacionCentrada(mensaje);
+    puedeMostrarBotones = true;
+    setTimeout(ocultarNotificacionCentrada, 2000);
+    renderGame(gameStateGlobal);
+});
+
+// Nueva notificación para el inicio del turno
+socket.on("turnoIniciado", ({ tiempo }) => {
+    mostrarNotificacionCentrada(
+        `¡Es tu turno! Tienes <span class="timer-num">${tiempo}</span> segundos para jugar.`
+    );
+
+    let segundosRestantes = tiempo;
+    if (window.turnoCountdownInterval) clearInterval(window.turnoCountdownInterval);
+
+    window.turnoCountdownInterval = setInterval(() => {
+        segundosRestantes--;
+        if (segundosRestantes <= 0) {
+            clearInterval(window.turnoCountdownInterval);
+            mostrarNotificacionCentrada("¡Se acabó tu tiempo!");
+            setTimeout(ocultarNotificacionCentrada, 2000);
+        } else {
+            mostrarNotificacionCentrada(
+                `¡Es tu turno! Tienes <span class="timer-num">${segundosRestantes}</span> segundos para jugar.`
+            );
+        }
+    }, 1000);
+});
+
+document.getElementById("btnPedirCarta")?.addEventListener("click", () => {
+    clearInterval(window.turnoCountdownInterval);
+    ocultarNotificacionCentrada();
+});
+document.getElementById("btnPlantarse")?.addEventListener("click", () => {
+    clearInterval(window.turnoCountdownInterval);
+    ocultarNotificacionCentrada();
+});
+
+// Asegura que el div de balance existe
+function asegurarBalanceUsuario() {
+    if (!document.getElementById("balanceUsuario")) {
+        const balanceDiv = document.createElement("div");
+        balanceDiv.id = "balanceUsuario";
+        balanceDiv.className = "balance-usuario";
+        document.body.appendChild(balanceDiv);
+    }
+}
+asegurarBalanceUsuario();
+
+socket.on("expulsadoInactividad", ({ mensaje }) => {
+    mostrarNotificacionCentrada(mensaje);
+    setTimeout(ocultarNotificacionCentrada, 4000);
+    // Opcional: puedes recargar la página o redirigir si quieres sacar al usuario de la mesa
+    // location.reload();
+});
+
+socket.on("mostrarGanadores", ({ ganadores }) => {
+    // Quita coronas antiguas
+    document.querySelectorAll('.corona-ganador').forEach(el => el.remove());
+
+    document.querySelectorAll('.jugador-box').forEach(box => {
+        const nombre = box.querySelector('.jugador-nombre')?.textContent;
+        if (ganadores.includes(nombre)) {
+            const avatar = box.querySelector('.jugador-avatar');
+            if (avatar && !avatar.querySelector('.corona-ganador')) {
+                const corona = document.createElement('span');
+                corona.className = 'corona-ganador';
+                corona.innerHTML = '👑';
+                avatar.style.position = "relative";
+                corona.style.position = "absolute";
+                corona.style.top = "-38px"; // Más arriba
+                corona.style.left = "50%";
+                corona.style.transform = "translateX(-50%)";
+                corona.style.fontSize = "3.2em"; // Más grande
+                corona.style.zIndex = "10";
+                avatar.appendChild(corona);
+            }
+        }
+    });
+
+    // Mostrar mensaje de reinicio
+    mostrarNotificacionCentrada(
+        `<span">
+        ${ganadores.map(n => '👑 ' + n).join(', ')}
+        Partida reiniciándose...
+    </span>`
+    );
+});
+
+// Chat mejorado
+const chatForm = document.getElementById("form");
+const chatInput = document.getElementById("input");
+const chatMessages = document.getElementById("messages");
+
+chatForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const msg = chatInput.value.trim();
+    if (msg.length > 0) {
+        socket.emit("chat message", { roomId, message: msg, username: currentUsername });
+        chatInput.value = "";
+    }
+});
+
+socket.on("chat message", ({ username, message }) => {
+    const li = document.createElement("li");
+    li.className = "chat-message";
+    li.innerHTML = `<span class="chat-user">${username}:</span> <span class="chat-text">${message}</span>`;
+    chatMessages.appendChild(li);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 });
     </script>
   </body>

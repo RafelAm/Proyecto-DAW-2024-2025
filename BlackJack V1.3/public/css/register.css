@@ -1,121 +1,171 @@
 @charset "UTF-8";
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #dddddd;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.main-content {
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  margin: 0;
-}
-body #mensaje {
-  display: none;
-  color: #28a745;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  padding: 10px;
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  border-radius: 5px;
-  margin-bottom: 10px;
   width: 100%;
-  max-width: 320px;
-}
-body #registroForm {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  width: 90%;
-  max-width: 320px;
-  text-align: center;
-}
-body #registroForm label {
-  display: block;
-  font-weight: bold;
-  margin: 10px 0 5px;
-  text-align: left;
-}
-body #registroForm input {
-  width: 100%;
-  padding: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  font-size: 1rem;
-}
-body #registroForm input:focus {
-  outline: none;
-  border-color: #007bff;
-}
-body #registroForm small {
-  display: block;
-  margin-top: -10px;
-  margin-bottom: 10px;
-  color: red;
-}
-body #registroForm button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-body #registroForm button:hover {
-  background-color: #0056b3;
+  padding: 32px 0;
 }
 
-/* Responsive para tablets */
-@media (min-width: 768px) {
-  #mensaje {
-    font-size: 18px;
-    padding: 12px;
-    max-width: 450px;
+#registroForm {
+  background: #fff;
+  padding: 2.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 32px rgba(80, 80, 160, 0.1);
+  width: 100%;
+  max-width: 370px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: stretch;
+  margin: 0 auto;
+}
+
+.register-title {
+  margin-bottom: 0.5rem;
+  color: #2d3a5a;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+#registroForm label {
+  font-weight: 600;
+  color: #3a3a3a;
+  margin-bottom: 0.2rem;
+  text-align: left;
+}
+
+#registroForm input[type=text],
+#registroForm input[type=email],
+#registroForm input[type=password],
+#registroForm input[type=file] {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid #c7d0e1;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f7faff;
+  transition: border-color 0.2s;
+}
+
+#registroForm input:focus {
+  outline: none;
+  border-color: #7a9cff;
+  background: #f0f6ff;
+}
+
+#registroForm small {
+  min-height: 18px;
+  color: #e74c3c;
+  font-size: 0.93em;
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+#registroForm button[type=submit] {
+  width: 100%;
+  padding: 0.8rem 0;
+  background: #ff6f61;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.08em;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(80, 80, 160, 0.07);
+  transition: background 0.2s, transform 0.1s;
+}
+
+#registroForm button[type=submit]:hover,
+#registroForm button[type=submit]:focus {
+  background: #da5e52;
+}
+
+.mensaje {
+  display: none;
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+footer {
+  flex-shrink: 0;
+  width: 100%;
+  background: #2d3a5a;
+  color: #fff;
+  text-align: center;
+  padding: 1.1rem 0;
+  font-size: 1em;
+  margin-top: auto;
+  box-shadow: 0 -2px 12px rgba(80, 80, 160, 0.07);
+}
+
+/* --- Responsive Tablet --- */
+@media (max-width: 900px) {
+  .main-content {
+    padding: 18px 0;
   }
   #registroForm {
-    width: 450px;
-    padding: 30px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-  }
-  #registroForm label {
-    font-size: 1.2rem;
-  }
-  #registroForm input {
-    font-size: 1.2rem;
-    padding: 12px;
-  }
-  #registroForm button {
-    font-size: 1.2rem;
-    padding: 12px;
+    max-width: 98vw;
+    padding: 2rem 1.2rem;
   }
 }
-/* Responsive para móviles */
-@media (max-width: 480px) {
-  body {
-    padding: 10px;
+/* --- Responsive Móvil --- */
+@media (max-width: 600px) {
+  .main-content {
+    width: 100vw;
+    min-width: 100vw;
+    padding: 0;
+    justify-content: center;
+    align-items: flex-start;
   }
   #registroForm {
-    width: 100%;
-    max-width: 280px;
-    padding: 15px;
+    width: 92vw;
+    max-width: 350px;
+    min-width: 0;
+    gap: 0;
+    padding: 7vw 4vw 4vw 4vw;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(80, 80, 160, 0.07);
+    margin: 18px 8px 0 8px;
   }
-  input {
-    font-size: 0.9rem;
-    padding: 7px;
+  .register-title {
+    font-size: 1.15rem;
   }
-  button {
-    font-size: 0.9rem;
-    padding: 7px;
+  #registroForm label {
+    font-size: 1em;
   }
-  #mensaje {
-    font-size: 14px;
-    padding: 8px;
-    max-width: 280px;
+  #registroForm input[type=text],
+  #registroForm input[type=email],
+  #registroForm input[type=password],
+  #registroForm input[type=file] {
+    font-size: 1em;
+    padding: 0.6rem 0.7rem;
+  }
+  #registroForm button[type=submit] {
+    font-size: 1em;
+    padding: 0.7rem 0;
+  }
+  footer {
+    font-size: 0.95em;
+    padding: 0.8rem 0;
   }
 }/*# sourceMappingURL=register.css.map */

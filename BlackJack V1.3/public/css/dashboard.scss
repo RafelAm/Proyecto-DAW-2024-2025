@@ -2,147 +2,496 @@
 $primary-color: #ff5c5c;
 $background-color: #f8f8f8;
 $text-color: #333;
-$shadow-color: rgba(0, 0, 0, 0.3);
+$shadow-color: rgba(0, 0, 0, 0.15);
+$accent-color: #ffe5e5;
+
+// Paleta
+$primary: #ff5c5c;
+$secondary: #43cea2;
+$info: #355cfa;
+$crupier: #fc5c7d;
+$bg-light: #fff;
+$bg-accent: #ffe5e5;
+$bg-jugador: #e0fff6;
+$bg-crupier: #e8eaff;
+$bg-baraja: #ffe5ed;
+$text-main: #333;
+$text-muted: #888;
+
+// Altura de la navbar (ajusta según tu navbar)
+$navbar-height: 70px;
 
 // Contenedor principal del dashboard
 .dashboard-container {
-    max-width: 800px;
-    margin: 50px auto;
-    background-color: white;
-    padding: 20px;
-    box-shadow: 0px 0px 10px $shadow-color;
-    border-radius: 10px;
+    max-width: 600px;
+    width: 90%;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #fff 80%, $accent-color 100%);
+    padding: 48px 32px 40px 32px;
+    box-shadow: 0 8px 32px $shadow-color;
+    border-radius: 24px;
     text-align: center;
+    flex: 1 0 auto;
+    min-height: 500px;
+    margin-top: calc($navbar-height + 60px); // Más separación con la navbar
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 2; // Asegura que esté por encima del fondo pero debajo de la navbar
+    transition: box-shadow 0.2s;
+    border: 1.5px solid #ffeaea;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.dashboard-title {
+    font-size: 2.2rem;
+    color: $primary-color;
+    margin-bottom: 32px;
+    letter-spacing: 1px;
+    font-weight: 700;
+    text-shadow: 0 2px 8px rgba(255,92,92,0.08);
+}
+
+// Mejorar estilos de formularios globalmente
+#edit-form, #create-form {
+    background: linear-gradient(120deg, #fff 80%, $accent-color 100%);
+    padding: 36px 28px 28px 28px;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px $shadow-color;
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border: 1.5px solid #ffeaea;
+    align-items: stretch;
+    transition: box-shadow 0.2s;
+}
+
+form label {
+    font-size: 18px;
+    color: $primary-color;
+    margin-bottom: 6px;
+    font-weight: 600;
+    text-align: left;
+    letter-spacing: 0.5px;
+}
+
+#edit-form input, #create-form select,
+#edit-form select, #create-form select,
+#edit-form textarea, #create-form textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #ffd6d6;
+    border-radius: 10px;
+    font-size: 17px;
+    background: #fff;
+    transition: border 0.2s, box-shadow 0.2s;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(255,92,92,0.04);
+
+    &:focus {
+        border: 1.5px solid $primary-color;
+        outline: none;
+        background: #fff7f7;
+        box-shadow: 0 2px 8px rgba(255,92,92,0.10);
+    }
+}
+
+form button,
+.button-group button,
+.create-user-btn {
+    background: linear-gradient(90deg, #6a82fb 70%, #fc5c7d 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 0;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(106,130,251,0.10);
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+
+    &:hover {
+        background: linear-gradient(90deg, #355cfa 70%, #fc427b 100%);
+        transform: translateY(-2px) scale(1.04);
+        box-shadow: 0 4px 20px rgba(252,92,125,0.18);
+    }
 }
 
 // Dropdowns de selección
 .dropdown-label {
     font-size: 18px;
-    margin: 10px 0;
+    margin: 18px 0 6px 0;
     display: block;
     color: $text-color;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .dropdown-select {
     width: 100%;
-    padding: 8px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 10px 12px;
+    margin: 10px 0 18px 0;
+    border: 1.5px solid #ffd6d6;
+    border-radius: 8px;
     cursor: pointer;
+    background: #fff;
+    font-size: 17px;
+    transition: border 0.2s, box-shadow 0.2s;
+
+    &:focus {
+        border: 1.5px solid $primary-color;
+        background: #fff7f7;
+        box-shadow: 0 2px 8px rgba(255,92,92,0.10);
+    }
 }
 
 // Contenedor de los diálogos
 .dialog-container {
     display: flex;
     justify-content: space-around;
-    margin-top: 20px;
+    margin-top: 32px;
+    gap: 32px;
+    flex-wrap: wrap;
 }
 
 // Estilos de los diálogos
 .dialog {
     display: none;
-    background: white;
-    box-shadow: 0px 0px 10px $shadow-color;
-    border-radius: 10px;
-    padding: 20px;
-    width: 350px;
+    background: #fff;
+    box-shadow: 0px 0px 16px $shadow-color;
+    border-radius: 14px;
+    padding: 28px 20px;
+    width: 565px;
     text-align: center;
+    border: 1.5px solid #ffeaea;
 
     input, select {
         width: 100%;
-        padding: 8px;
-        margin: 5px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
+        padding: 10px 0 ;
+        margin: 7px 0;
+        border: 1.5px solid #ffd6d6;
+        border-radius: 8px;
     }
 
     .button-group {
         display: flex;
         justify-content: space-between;
-        margin-top: 15px;
+        margin-top: 18px;
+        gap: 10px;
 
         button {
-            padding: 10px;
+            background: none;
+            background-color: #6c63ff; // color por defecto (azul violeta)
+            color: #fff;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 14px;
-            color: white;
+            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(108,99,255,0.10);
 
             &:first-child {
-                background-color: #28a745;
+                background-color: #43cea2; // verde agua (guardar/cambiar nombre)
             }
-
             &:nth-child(2) {
-                background-color: #ff9800;
+                background-color: #2196f3; // azul (añadir dinero)
+            }
+            &:nth-child(3) {
+                background-color: #e53935; // naranja (cambiar rol)
+            }
+            &:nth-child(4) {
+                background-color: #f7971e;
+                 // rojo (eliminar)
+            }
+            &:last-child {
+                background-color: #757575; // gris (cerrar)
             }
 
-            &:last-child {
-                background-color: #d9534f;
+            &:hover {
+                filter: brightness(0.92);
+                transform: translateY(-2px) scale(1.04);
+                box-shadow: 0 4px 16px rgba(0,0,0,0.13);
             }
         }
     }
 }
+
 .create-user-btn {
-    background-color: #28a745;
+    background: linear-gradient(90deg, #43cea2 70%, #185a9d 100%);
     color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
+    padding: 12px 18px;
+    border-radius: 8px;
     border: none;
     cursor: pointer;
-    font-size: 16px;
-    margin-bottom: 20px;
+    font-size: 17px;
+    margin-bottom: 24px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(67,206,162,0.10);
 
     &:hover {
-        background-color: #218838;
+        background: linear-gradient(90deg, #185a9d 70%, #43cea2 100%);
+        box-shadow: 0 4px 16px rgba(67,206,162,0.18);
     }
 }
 
-.dialog {
-    display: none;
-    background: white;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+// Contenedores principales
+.dialog-section {
+  border: 1.5px solid $primary;
+  border-radius: 14px;
+  padding: 16px 20px;
+  min-width: 220px;
+  background: linear-gradient(120deg, $bg-light 80%, $bg-accent 100%);
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px $shadow-color;
+}
+
+.dialog-section.jugadores {
+  border-color: $secondary;
+  background: linear-gradient(120deg, $bg-light 80%, $bg-jugador 100%);
+}
+
+.dialog-section.crupier {
+  border-color: $info;
+  background: linear-gradient(120deg, $bg-light 80%, $bg-crupier 100%);
+  min-width: 300px;
+}
+
+.dialog-section.baraja {
+  border-color: $crupier;
+  background: linear-gradient(120deg, $bg-light 80%, $bg-baraja 100%);
+  flex: 2;
+}
+
+.dialog-section.baraja-raw {
+  border-color: #999;
+  background: linear-gradient(120deg, $bg-light 80%, #f7f7f7 100%);
+}
+
+.dialog-section h3 {
+  margin-bottom: 10px;
+  font-size: 1.15em;
+}
+
+.dialog-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dialog-section li {
+  margin-bottom: 5px;
+  color: $text-main;
+}
+
+.dialog-section .campo {
+  color: $text-muted;
+  font-weight: 600;
+}
+
+.dialog-section .valor {
+  color: $text-main;
+}
+
+.jugador-nombre {
+  font-size: 1.1em;
+  color: $info;
+  font-weight: bold;
+}
+
+.baraja-cartas {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  justify-content: center;
+}
+
+.carta {
+  border: 1.5px solid #aaa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 38px;
+  min-height: 48px;
+  background: $bg-light;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15em;
+  box-shadow: 0 2px 6px rgba(255,92,92,0.08);
+}
+
+.carta .valor {
+  font-weight: bold;
+  color: $primary;
+}
+
+.carta .palo {
+  font-size: 1.4em;
+}
+
+.dialog-title {
+  color: $primary;
+  font-size: 2em;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.dialog-layout {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.dialog-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 200px;
+}
+
+.dialog-close-btn {
+  margin-top: 22px;
+  background: $primary;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-size: 1.1em;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255,92,92,0.10);
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// Asegúrate de aplicar esto en el CSS principal/global
+html, body {
+  height: 100%;
+  min-height: 100dvh; // Usa 100dvh para móviles modernos
+  margin: 0;
+  padding: 0;
+  background: $background-color;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.dashboard-container {
+  flex: 1 0 auto; // Ocupa todo el espacio disponible, deja sitio al footer
+  min-height: 0;  // Evita conflictos con min-height fijo
+  margin-top: 70px; // O el alto real de tu navbar
+  z-index: 2;
+  position: relative;
+}
+
+footer, .footer {
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// En móvil, asegúrate de que el footer nunca se corta
+@media (max-width: 600px) {
+
+}
+
+// Tablet (≤ 1024px)
+@media (max-width: 1024px) {
+  .dashboard-container {
+    max-width: 98vw;
+    width: 98vw;
+    padding: 18px 2vw 18px 2vw;
+    margin-top: 80px;
+    border-radius: 16px;
+    min-height: unset;
+    box-sizing: border-box;
+  }
+  #edit-form,
+  #create-form {
+    max-width: 96vw;
+    width: 96vw;
+    padding: 18px 2vw 14px 2vw;
+    border-radius: 14px;
+    box-sizing: border-box;
+  }
+  .dialog {
+    width: 96vw;
+    max-width: 96vw;
+    min-width: unset;
+    padding: 14px 2vw;
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+  .dialog-layout {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+  .dialog-section,
+  .dialog-section.crupier,
+  .dialog-section.baraja {
+    min-width: 0;
+    max-width: 96vw;
+    padding: 10px 2vw;
     border-radius: 10px;
-    padding: 20px;
-    width: 350px;
-    text-align: center;
-    input[type="password"] {
-        width: 100%;
-        padding: 8px;
-        margin: 5px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-
-    input, select {
-        width: 100%;
-        padding: 8px;
-        margin: 5px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-
-    .button-group {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 15px;
-
-        button {
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            color: white;
-
-            &:first-child {
-                background-color: #28a745;
-            }
-
-            &:nth-child(2) {
-                background-color: #d9534f;
-            }
-        }
-    }
+    font-size: 1em;
+    box-sizing: border-box;
+  }
+  .dialog-col {
+    min-width: 0;
+    max-width: 96vw;
+  }
+  .baraja-cartas {
+    gap: 4px;
+    width: 100%;
+    max-width: 96vw;
+    box-sizing: border-box;
+    overflow-x: auto;
+  }
+  #edit-form {
+    max-width: 94vw !important;
+    width: 94vw !important;
+    padding: 12px 1vw 10px 1vw !important;
+    border-radius: 12px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+  #edit-form * {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  #edit-form input,
+  #edit-form select,
+  #edit-form textarea {
+    max-width: 100%;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  #edit-form .button-group {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  #edit-form .button-group button {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
 }

@@ -290,7 +290,8 @@ export class Partida {
     const posCrupier = this.jugadores.findIndex(j => j.tipo === "Crupier");
     const crupier = this.jugadores[posCrupier];
 
-    let totalApuestas = 0;
+    let totalApuestas = 0; // <-- CORREGIDO: inicializa la variable
+
     this.jugadores.forEach(jugador => {
         if (jugador.tipo === "Player") {
             totalApuestas += jugador.apuesta;
@@ -361,6 +362,7 @@ export class Partida {
             player.plant = false;
             if(player.tipo === "Player") {
                 player.apuesta = 0;
+                player.fichasApostadas = [];
             }
         });
         this.baraja = new Baraja();

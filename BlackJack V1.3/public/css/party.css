@@ -8,24 +8,29 @@ body {
   justify-content: center;
   position: relative;
   background: none;
-  min-height: 100vh;
 }
 body #botonesInicio {
   position: absolute;
-  bottom: 20%;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
+  z-index: 20;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 body #botonesInicio .joinGame {
-  background-color: rgb(255, 0, 0);
+  background: #ff6f61;
+  color: #fff;
   border: none;
-  color: white;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 1rem;
   font-weight: bold;
-  font-size: 1em;
-  margin: 0 2%;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 120px;
+  text-align: center;
 }
 body #timerDisplay {
   position: fixed;
@@ -45,7 +50,7 @@ body .mesa {
   position: relative;
   width: 90vw;
   height: 70vh;
-  margin: 60px auto 0 auto;
+  margin: 90px auto 0 auto;
   background: radial-gradient(ellipse at center, #388e3c 60%, #1b5e20 100%);
   border-radius: 50% 50% 45% 45%/60% 60% 40% 40%;
   box-shadow: 0 8px 40px #222;
@@ -79,8 +84,11 @@ body .mesa .jugador-pos-1, body .mesa .jugador-pos-2, body .mesa .jugador-pos-3,
   /* Ajusta left según el número de jugadores para repartirlos */
 }
 body .mesa .jugador-pos-1 {
-  left: 0.5%;
+  left: 2%;
   bottom: 10%;
+  right: auto;
+  top: auto;
+  transform: none;
 }
 body .mesa .jugador-pos-2 {
   left: 50%;
@@ -88,8 +96,11 @@ body .mesa .jugador-pos-2 {
   transform: translateX(-50%);
 }
 body .mesa .jugador-pos-3 {
-  right: 0.5%;
+  right: 2%;
   bottom: 10%;
+  left: auto;
+  top: auto;
+  transform: none;
 }
 body .mesa .jugador-pos-4 {
   left: 50%;
@@ -472,6 +483,8 @@ body .jugador-propio-row {
 body .apuesta-encima {
   position: absolute;
   bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
   background: #fffde7;
   color: #222;
   font-weight: bold;
@@ -493,17 +506,422 @@ body .icono-moneda {
 body .jugador-box {
   position: relative;
 }
-
+body .jugador-box.jugador-en-turno {
+  box-shadow: 0 0 32px 8px #ffd600, 0 4px 24px rgba(34, 34, 34, 0.5333333333) !important; /* Amarillo */
+  /* Para rojo usa: box-shadow: 0 0 32px 8px #ff5252, 0 4px 24px #2228 !important; */
+  transition: box-shadow 0.2s;
+}
+body .jugador-nombre,
+body .apuesta-pequena,
+body .apuesta-encima,
+body .puntos,
+body .fichas,
+body .apuesta,
+body .cards,
+body .cardsCr {
+  font-family: "Lobster", cursive, Arial, sans-serif !important;
+}
+body #mensaje, body .mensaje {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 280px;
+  max-width: 80vw;
+  background: rgba(255, 255, 255, 0.98);
+  color: #d32f2f;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 18px;
+  box-shadow: 0 8px 40px rgba(34, 34, 34, 0.5333333333), 0 0 0 4px rgba(255, 214, 0, 0.2666666667);
+  padding: 24px 40px;
+  z-index: 99999 !important; /* Asegura que esté por encima de todo */
+  text-align: center;
+  opacity: 1;
+  transition: opacity 0.4s;
+  pointer-events: none;
+  border: 2px solid red;
+}
+body .mensaje.info {
+  color: #1976d2;
+  box-shadow: 0 8px 40px rgba(34, 34, 34, 0.5333333333), 0 0 0 4px rgba(25, 118, 210, 0.2666666667);
+}
+body .mensaje.error {
+  color: #d32f2f;
+  box-shadow: 0 8px 40px rgba(34, 34, 34, 0.5333333333), 0 0 0 4px rgba(255, 82, 82, 0.2666666667);
+}
+body .mensaje.oculto {
+  opacity: 0;
+}
+body #notificacionCentrada, body .notificacion-centrada {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 180px;
+  max-width: 70vw;
+  background: rgba(255, 255, 255, 0.98);
+  color: #222;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(34, 34, 34, 0.2666666667), 0 0 0 2px rgba(255, 214, 0, 0.2666666667);
+  padding: 12px 24px;
+  z-index: 99999 !important;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+body .notificacion-centrada .timer-num {
+  color: #ff6f61;
+  font-size: 1.3rem;
+  margin: 0 4px;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-weight: bold;
+}
+body .contenedor-apuesta {
+  position: absolute;
+  bottom: 0;
+  left: 60%;
+  transform: translateX(-50%);
+  background: #fffde7;
+  color: #222;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.1em;
+  border-radius: 18px;
+  padding: 18px 24px 14px 24px;
+  box-shadow: 0 6px 24px rgba(34, 34, 34, 0.2666666667), 0 0 0 2px rgba(255, 214, 0, 0.2666666667);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 12;
+  min-width: 180px;
+  margin-bottom: 8px;
+  border: 2px solid #ffd600;
+  animation: popin 0.3s;
+}
+@keyframes popin {
+  0% {
+    transform: translateX(-50%) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+body #fichasContainer {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+body .ficha {
+  background: linear-gradient(145deg, #fffbe7 60%, #ffe082 100%);
+  border: 2px solid #ffd600;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1333333333);
+  cursor: pointer;
+  padding: 6px;
+  transition: transform 0.1s, box-shadow 0.2s;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body .ficha:active, body .ficha:focus {
+  transform: scale(0.92);
+  box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.5333333333);
+}
+body .icono-boton-ficha {
+  width: 48px;
+  height: 48px;
+  vertical-align: middle;
+  pointer-events: none;
+  display: block;
+}
+body .apuesta-botones {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  justify-content: center;
+}
+body .apuesta-botones button {
+  background: #ff6f61;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px 8px 12px;
+  font-size: 1rem;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1333333333);
+  transition: background 0.2s, transform 0.1s;
+}
+body .apuesta-botones button:hover {
+  background: #d32f2f;
+  transform: scale(1.04);
+}
+body .icono-boton-accion {
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+  pointer-events: none;
+}
+body .apuesta-botones button i {
+  font-size: 1.4rem;
+  pointer-events: none;
+}
+body #apuestaResumen {
+  background: #e8f5e9;
+  color: #388e3c;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.1em;
+  font-weight: bold;
+  border-radius: 10px;
+  padding: 8px 18px;
+  margin: 8px 0 0 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1333333333);
+  text-align: center;
+  min-width: 120px;
+  max-width: 100%;
+  letter-spacing: 0.5px;
+  border: 1.5px solid #ffd600;
+  transition: background 0.2s, color 0.2s;
+  display: block;
+}
+body .jugador-balance {
+  font-size: 1.05em;
+  color: #ffb300;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-weight: bold;
+  margin: 2px 0 2px 0;
+  text-align: center;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+body .jugador-balance::before {
+  content: "💰";
+  margin-right: 4px;
+}
+body .balance-usuario {
+  position: fixed;
+  top: 10%;
+  right: 32px;
+  background: #fffde7;
+  color: #ffb300;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.25rem;
+  font-weight: bold;
+  border-radius: 14px;
+  padding: 10px 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1333333333), 0 0 0 2px rgba(255, 214, 0, 0.2666666667);
+  z-index: 100;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid #ffd600;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+body .balance-usuario::before {
+  content: "💰";
+  margin-right: 8px;
+  font-size: 1.3em;
+}
+body .total-apuestas-usuario {
+  position: fixed;
+  top: calc(10% + 56px);
+  right: 32px;
+  background: #e8f5e9;
+  color: #388e3c;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 12px;
+  padding: 8px 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1333333333), 0 0 0 2px rgba(255, 214, 0, 0.2666666667);
+  z-index: 99;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid #ffd600;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  margin-top: 8px;
+}
+body .icono-apuesta {
+  font-size: 1.3em;
+  margin-right: 8px;
+}
+body .corona-ganador {
+  font-size: 3.2em !important;
+  position: absolute;
+  top: -38px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 10;
+  pointer-events: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+body #chat-container {
+  position: fixed;
+  bottom: 32px;
+  left: 32px;
+  width: 340px;
+  max-height: 340px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(34, 34, 34, 0.5333333333);
+  padding: 18px 18px 12px 18px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+body #chat-container h2 {
+  margin: 0 0 8px 0;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.3em;
+  color: #388e3c;
+}
+body #messages {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+  max-height: 180px;
+  overflow-y: auto;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+}
+body .chat-message {
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  font-size: 1.05em;
+  word-break: break-word;
+}
+body .chat-user {
+  color: #388e3c;
+  font-weight: bold;
+  margin-right: 4px;
+}
+body #form {
+  display: flex;
+  gap: 8px;
+}
+body #input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #ffd600;
+  font-size: 1em;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  outline: none;
+  transition: border 0.2s;
+}
+body #input::-moz-placeholder {
+  color: #bbb;
+  font-style: italic;
+}
+body #input::placeholder {
+  color: #bbb;
+  font-style: italic;
+}
+body #input:focus {
+  border: 2px solid #388e3c;
+}
+body #form button {
+  background: #ff6f61;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+body #form button:hover {
+  background: #d32f2f;
+}
+body #notificacionCentrada, body .notificacion-centrada {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 180px;
+  max-width: 70vw;
+  background: rgba(255, 255, 255, 0.98);
+  color: #222;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(34, 34, 34, 0.2666666667), 0 0 0 2px rgba(255, 214, 0, 0.2666666667);
+  padding: 12px 24px;
+  z-index: 99999 !important;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+body #notificacionCentrada .timer-num, body .notificacion-centrada .timer-num {
+  color: #ff6f61;
+  font-size: 1.3rem;
+  margin: 0 4px;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-weight: bold;
+}
+body #notificacionCentrada .ganadores-lista, body .notificacion-centrada .ganadores-lista {
+  font-size: 2em;
+  display: block;
+  margin-bottom: 10px;
+}
+body #notificacionCentrada .mensaje-reinicio, body .notificacion-centrada .mensaje-reinicio {
+  font-size: 1.5em;
+  display: block;
+  color: #1976d2;
+  margin-top: 12px;
+}
 body::before {
   content: "";
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background: url("/images/logo2.png");
   background-repeat: no-repeat;
   background-size: cover;
   filter: blur(10px);
   z-index: -1;
+  pointer-events: none;
+}
+body .chat-titulo {
+  margin: 0 0 8px 0;
+  font-family: "Lobster", cursive, Arial, sans-serif;
+  font-size: 1.3em;
+  color: #388e3c;
 }/*# sourceMappingURL=party.css.map */

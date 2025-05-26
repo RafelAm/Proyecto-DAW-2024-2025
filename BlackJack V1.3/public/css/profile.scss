@@ -2,10 +2,10 @@
 $primary-color: #ff5c5c;
 $primary-hover: #e04e4e;
 $background-color: #f8f8f8;
-$text-color: #333;
+$text-color: #23272f;
 $text-light: #666;
-$dialog-background: white;
-$overlay-color: rgba(0, 0, 0, 0.3);
+$dialog-background: #fff;
+$overlay-color: rgba(0, 0, 0, 0.35);
 $success-color: #28a745;
 $success-hover: #218838;
 $cancel-color: #6c757d;
@@ -13,129 +13,229 @@ $cancel-hover: #5a6268;
 
 // Estilos generales
 body {
-    font-family: Arial, sans-serif;
-    background-color: $background-color;
-    margin: 0;
-    padding: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background-color: $background-color;
+  margin: 0;
+  padding: 0;
 }
 
 // Contenedor del perfil
 .profile-container {
-    max-width: 400px;
-    margin: 50px auto;
-    background-color: white;
-    padding: 20px;
-    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-    border-radius: 10px;
-    text-align: center;
+  max-width: 420px;
+  margin: 40px auto 30px auto;
+  background: #fff;
+  padding: 32px 28px 24px 28px;
+  box-shadow: 0 4px 24px rgba(80,80,160,0.10);
+  border-radius: 16px;
+  text-align: center;
+  position: relative;
 
-    .profile-image {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        margin-bottom: 10px;
+  .profile-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+    object-fit: cover;
+    border: 3px solid $primary-color;
+    background: #eee;
+  }
+
+  .profile-name {
+    font-size: 1.7rem;
+    color: $text-color;
+    margin-bottom: 8px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .profile-info {
+    font-size: 1.08rem;
+    color: $text-light;
+    margin: 6px 0;
+    text-align: left;
+    strong {
+      color: $text-color;
     }
+  }
 
-    .profile-name {
-        font-size: 24px;
-        color: $text-color;
-        margin-bottom: 10px;
+  .profile-subtitle {
+    font-size: 1.18rem;
+    color: $primary-color;
+    margin: 18px 0 10px 0;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  hr {
+    border: none;
+    border-top: 1.5px solid #eee;
+    margin: 18px 0 12px 0;
+  }
+
+  .edit-btn {
+    background-color: $primary-color;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.08rem;
+    font-weight: 600;
+    margin-top: 18px;
+    transition: background 0.2s;
+    &:hover {
+      background-color: $primary-hover;
     }
-
-    .profile-info {
-        font-size: 16px;
-        color: $text-light;
-        margin: 5px 0;
-    }
-
-    .edit-btn {
-        background-color: $primary-color;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-
-        &:hover {
-            background-color: $primary-hover;
-        }
-    }
+  }
 }
 
 // Overlay para el diálogo
 .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: $overlay-color;
-    
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: $overlay-color;
+  z-index: 1000;
 }
 
 // Diálogo de edición
 .dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: $dialog-background;
-    padding: 20px;
-    box-shadow: 0px 0px 10px rgba(0,0,0,0.3);
-    border-radius: 10px;
-    width: 300px;
-    text-align: center;
-    z-index: 1;
-    .dialog-title {
-        font-size: 20px;
-        margin-bottom: 15px;
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: $dialog-background;
+  padding: 24px 18px 18px 18px;
+  box-shadow: 0 4px 24px rgba(80,80,160,0.18);
+  border-radius: 14px;
+  width: 340px;
+  max-width: 95vw;
+  text-align: center;
+  z-index: 1100;
+
+  .dialog-title {
+    font-size: 1.25rem;
+    margin-bottom: 15px;
+    color: $primary-color;
+    font-weight: 700;
+  }
+
+  .edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .form-label {
+      display: block;
+      font-size: 1rem;
+      margin: 5px 0 2px 0;
+      text-align: left;
+      color: $text-color;
+      font-weight: 600;
     }
 
-    .edit-form {
-        .form-label {
-            display: block;
-            font-size: 16px;
-            margin: 5px 0;
-            text-align: left;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .form-submit {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            background-color: $success-color;
-            color: white;
-
-            &:hover {
-                background-color: $success-hover;
-            }
-        }
-
-        .form-cancel {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            background-color: $cancel-color;
-            color: white;
-
-            &:hover {
-                background-color: $cancel-hover;
-            }
-        }
+    .form-input {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      margin-bottom: 2px;
+      border: 1.5px solid #c7d0e1;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: #f7faff;
+      color: $text-color;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        background: #f0f6ff;
+      }
     }
+
+    .form-submit {
+      width: 100%;
+      padding: 0.8rem 0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.08em;
+      background-color: $success-color;
+      color: #fff;
+      font-weight: 700;
+      margin-top: 8px;
+      transition: background 0.2s;
+      &:hover {
+        background-color: $success-hover;
+      }
+    }
+
+    .form-cancel {
+      width: 100%;
+      padding: 0.8rem 0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.08em;
+      background-color: $cancel-color;
+      color: #fff;
+      font-weight: 700;
+      margin-top: 6px;
+      transition: background 0.2s;
+      &:hover {
+        background-color: $cancel-hover;
+      }
+    }
+  }
+}
+
+/* Responsive Tablet */
+@media (max-width: 900px) {
+  .profile-container {
+    max-width: 98vw;
+    padding: 20px 8vw 18px 8vw;
+  }
+  .dialog {
+    width: 95vw;
+    max-width: 95vw;
+    padding: 18px 4vw 14px 4vw;
+  }
+}
+
+/* Responsive Móvil */
+@media (max-width: 600px) {
+  .profile-container {
+    max-width: 98vw;
+    padding: 16px 2vw 12px 2vw;
+    border-radius: 0;
+    margin: 16px 0 0 0;
+    box-shadow: none;
+  }
+  .profile-image {
+    width: 90px !important;
+    height: 90px !important;
+  }
+  .profile-name {
+    font-size: 1.15rem;
+  }
+  .profile-info {
+    font-size: 0.98rem;
+  }
+  .profile-subtitle {
+    font-size: 1.05rem;
+  }
+  .dialog {
+    width: 90vw;
+    max-width: 98vw;
+    padding: 12px 2vw 10px 2vw;
+    border-radius: 0;
+    
+  }
+  .edit-form .form-input {
+    font-size: 0.98rem;
+    padding: 0.6rem 0.7rem;
+  }
+  .edit-form .form-submit,
+  .edit-form .form-cancel {
+    font-size: 1em;
+    padding: 0.7rem 0;
+  }
 }

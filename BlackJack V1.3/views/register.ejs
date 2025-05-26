@@ -1,28 +1,35 @@
 <%- include('partials/header')%>
 <link rel="stylesheet" href="/css/register.css">
-<form id="registroForm" enctype="multipart/form-data" action="/register" method="POST">
-    <label for="nombre">Nombre:</label><br>
-    <input type="text" name="nombre" id="nombre" required onblur="verificarNombre()"><br>
-    <small id="nombreError" style="color: red;"></small><br>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<div class="main-content">
+  <form id="registroForm" enctype="multipart/form-data" action="/register" method="POST">
+      <h2 class="register-title">Crear Cuenta</h2>
+      <p id="mensaje" class="mensaje"></p>
 
-    <label for="correo">Correo Electrónico:</label><br>
-    <input type="email" name="correo" id="correo" required onblur="verificarCorreo()"><br>
-    <small id="correoError" style="color: red;"></small><br>
+      <label for="nombre">Nombre:</label>
+      <input type="text" name="nombre" id="nombre" required>
+      <small id="nombreError"></small>
 
-    <label for="contra">Contraseña:</label><br>
-    <input type="password" name="contra" id="contra" required><br>
+      <label for="correo">Correo Electrónico:</label>
+      <input type="email" name="correo" id="correo" required>
+      <small id="correoError"></small>
 
-    <label for="imagenPerfil">Imagen de perfil (opcional):</label><br>
-    <input type="file" name="imagenPerfil" id="imagenPerfil" accept="image/*"><br><br>
+      <label for="contra">Contraseña:</label>
+      <input type="password" name="contra" id="contra" required>
 
-    <button type="submit">Registrar</button>
-</form>
+      <label for="imagenPerfil">Imagen de perfil (opcional):</label>
+      <input type="file" name="imagenPerfil" id="imagenPerfil" accept="image/*">
 
-<p id="mensaje" style="color: green; font-size: 16px; font-weight: bold; display: none;"></p>
+      <button type="submit">Registrar</button>
+  </form>
+</div>
 
 <%- include('partials/footer')%>
 
 <script>
+document.getElementById('nombre').addEventListener('blur', verificarNombre);
+document.getElementById('correo').addEventListener('blur', verificarCorreo);
+
 document.getElementById('registroForm').addEventListener('submit', async function(event) {
     event.preventDefault();
     const form = event.target;

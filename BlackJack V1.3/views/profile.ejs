@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/profile.css"> <!-- Asegúrate de incluir tu archivo CSS -->
 </head>
 <body>
+    <%- include('partials/header') %>
 <div class="profile-container">
     <img src="<%= profileImage || '/images/default-user.png' %>" alt="Foto de perfil" class="profile-image">
     <h1 class="profile-name">Bienvenido, <%= user.nombre %>!</h1>
@@ -32,7 +33,7 @@
         <button onclick="mostrarDialogo()" class="edit-btn">✏️ Editar perfil</button>
     <% } %>
 </div>
-
+<%- include('partials/footer') %>
  <script>
     function mostrarDialogo() {
         const sessionUser = "<%= username %>";  

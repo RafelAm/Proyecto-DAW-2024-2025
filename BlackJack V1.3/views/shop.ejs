@@ -1,180 +1,144 @@
-<%- include('partials/header') %>
 <link rel="stylesheet" href="/css/shop.css">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<%- include('partials/header') %>
 <div class="shop-container">
-    <h1>Comprar Monedas</h1>
-    <div class="cards-container">
-        <% const packs = [
-            { coins: 200, price: 2.99 },
-            { coins: 750, price: 5.00 },
-            { coins: 2000, price: 10.00 },
-            { coins: 5000, price: 20.00 },
-            { coins: 12000, price: 40.00 },
-            { coins: 30000, price: 80.00 }
-        ]; %>
-        <% packs.forEach((pack, i) => { %>
-            <div class="shop-card">
-                <div class="coins"><%= pack.coins %> monedas</div>
-                <div class="price"><%= pack.price.toFixed(2) %> €</div>
-                <button class="buy-btn" data-coins="<%= pack.coins %>" data-price="<%= pack.price %>">Comprar</button>
-            </div>
-        <% }) %>
-    </div>
+  <h1>Comprar Monedas</h1>
+  <div class="cards-container">
+    <% const packs = [
+      { coins: 200, price: 2.99 },
+      { coins: 750, price: 5.00 },
+      { coins: 2000, price: 10.00 },
+      { coins: 5000, price: 20.00 },
+      { coins: 12000, price: 40.00 },
+      { coins: 30000, price: 80.00 }
+    ]; %>
+    <% packs.forEach((pack) => { %>
+      <div class="shop-card">
+        <img src="/images/coins.png" alt="Monedas" class="coins-img" />
+        <div class="coins"><%= pack.coins %> monedas</div>
+        <div class="price"><%= pack.price.toFixed(2) %> €</div>
+        <button class="buy-btn" data-coins="<%= pack.coins %>" data-price="<%= pack.price %>">Comprar</button>
+      </div>
+    <% }) %>
+  </div>
 </div>
 
-<!-- Dialogo de pago -->
-<div id="paymentDialog" class="dialog" style="display:none;">
-    <form id="paymentForm">
+<!-- Contenedores vacíos para inyectar dinámicamente -->
+<div id="dynamic-root"></div>
+
+<script>
+// Genera el formulario de pago
+function generarFormularioPago() {
+  return `
+    <div id="paymentDialog" class="dialog">
+      <form id="paymentForm">
         <h2>Introduce los datos de tu tarjeta</h2>
         <input type="hidden" name="coins" id="coinsInput">
         <input type="hidden" name="price" id="priceInput">
 
         <label>Número de tarjeta:</label>
-        <input type="text" name="cardNumber" maxlength="19" required pattern="\d{16,19}">
-        <small style="color:#666; font-size:0.95em;">Introduce los 16 dígitos de tu tarjeta sin espacios</small>
+        <input type="text" name="cardNumber" maxlength="19" required pattern="\\d{16,19}">
+        <small class="input-help">Introduce los 16 dígitos de tu tarjeta sin espacios</small>
 
         <label>Fecha de caducidad (MM/AA):</label>
-        <input type="text" name="expiry" maxlength="5" required pattern="\d{2}/\d{2}">
-        <small style="color:#666; font-size:0.95em;">Ejemplo: 08/27</small>
+        <input type="text" name="expiry" maxlength="5" required pattern="\\d{2}/\\d{2}">
+        <small class="input-help">Ejemplo: 08/27</small>
 
         <label>CVC:</label>
-        <input type="text" name="cvc" maxlength="4" required pattern="\d{3,4}">
-        <small style="color:#666; font-size:0.95em;">3 o 4 dígitos (al reverso de la tarjeta)</small>
+        <input type="text" name="cvc" maxlength="4" required pattern="\\d{3,4}">
+        <small class="input-help">3 o 4 dígitos (al reverso de la tarjeta)</small>
 
         <button type="submit">Pagar</button>
-        <button type="button" onclick="cerrarDialogo()">Cancelar</button>
-        <div id="paymentError" style="color:red;"></div>
-    </form>
-</div>
-<div id="dialogOverlay" class="overlay" style="display:none;" onclick="cerrarDialogo()"></div>
-
-<script>
-document.querySelectorAll('.buy-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        mostrarDialogoPago(this.dataset.coins, this.dataset.price);
-    });
-});
-
-function mostrarDialogoPago(coins, price) {
-    cerrarDialogo(); // Por si hay uno abierto
-
-    // Crear overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'overlay';
-    overlay.id = 'dialogOverlay';
-    overlay.onclick = cerrarDialogo;
-    document.body.appendChild(overlay);
-
-    // Crear dialog
-    const dialog = document.createElement('div');
-    dialog.className = 'dialog';
-    dialog.id = 'paymentDialog';
-    dialog.innerHTML = `
-        <form id="paymentForm">
-            <h2>Introduce los datos de tu tarjeta</h2>
-            <input type="hidden" name="coins" value="${coins}">
-            <input type="hidden" name="price" value="${price}">
-
-            <label>Número de tarjeta:</label>
-            <input type="text" name="cardNumber" maxlength="19" required autocomplete="cc-number">
-            <small id="cardNumberHelp" style="color:#666; font-size:0.95em;">Introduce los 16 dígitos de tu tarjeta sin espacios</small>
-            <br>
-            <label>Fecha de caducidad (MM/AA):</label>
-            <input type="text" name="expiry" maxlength="5" required autocomplete="cc-exp">
-            <small id="expiryHelp" style="color:#666; font-size:0.95em;">Ejemplo: 08/27</small>
-            <br>
-            <label>CVC:</label>
-            <input type="text" name="cvc" maxlength="4" required autocomplete="cc-csc">
-            <small id="cvcHelp" style="color:#666; font-size:0.95em;">3 o 4 dígitos (al reverso de la tarjeta)</small>
-            <br>
-            <button type="submit">Pagar</button>
-            <button type="button" onclick="cerrarDialogo()">Cancelar</button>
-            <div id="paymentError" style="color:red;"></div>
-        </form>
-    `;
-    document.body.appendChild(dialog);
-
-    // Validaciones dinámicas
-    const form = document.getElementById('paymentForm');
-    const cardInput = form.cardNumber;
-    const expiryInput = form.expiry;
-    const cvcInput = form.cvc;
-
-    cardInput.addEventListener('input', function() {
-        const val = cardInput.value.replace(/\s/g, '');
-        const help = document.getElementById('cardNumberHelp');
-        if (!/^\d{0,19}$/.test(val)) {
-            cardInput.setCustomValidity('Solo números');
-            help.innerText = 'Solo números (sin espacios)';
-            help.style.color = '#d32f2f';
-        } else if (val.length > 0 && val.length < 16) {
-            cardInput.setCustomValidity('La tarjeta debe tener 16 dígitos');
-            help.innerText = 'La tarjeta debe tener 16 dígitos';
-            help.style.color = '#d32f2f';
-        } else {
-            cardInput.setCustomValidity('');
-            help.innerText = 'Introduce los 16 dígitos de tu tarjeta sin espacios';
-            help.style.color = '#666';
-        }
-    });
-
-    expiryInput.addEventListener('input', function() {
-        const val = expiryInput.value;
-        const help = document.getElementById('expiryHelp');
-        if (!/^\d{0,2}(\/\d{0,2})?$/.test(val)) {
-            expiryInput.setCustomValidity('Formato MM/AA');
-            help.innerText = 'Formato MM/AA';
-            help.style.color = '#d32f2f';
-        } else if (val.length === 5 && !/^\d{2}\/\d{2}$/.test(val)) {
-            expiryInput.setCustomValidity('Formato MM/AA');
-            help.innerText = 'Formato MM/AA';
-            help.style.color = '#d32f2f';
-        } else {
-            expiryInput.setCustomValidity('');
-            help.innerText = 'Ejemplo: 08/27';
-            help.style.color = '#666';
-        }
-    });
-
-    cvcInput.addEventListener('input', function() {
-        const val = cvcInput.value;
-        const help = document.getElementById('cvcHelp');
-        if (!/^\d{0,4}$/.test(val)) {
-            cvcInput.setCustomValidity('Solo números');
-            help.innerText = 'Solo números';
-            help.style.color = '#d32f2f';
-        } else if (val.length > 0 && val.length < 3) {
-            cvcInput.setCustomValidity('Debe tener 3 o 4 dígitos');
-            help.innerText = 'Debe tener 3 o 4 dígitos';
-            help.style.color = '#d32f2f';
-        } else {
-            cvcInput.setCustomValidity('');
-            help.innerText = '3 o 4 dígitos (al reverso de la tarjeta)';
-            help.style.color = '#666';
-        }
-    });
-
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const response = await fetch('/shop/pay', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
-        if (data.error) {
-            document.getElementById('paymentError').innerText = data.mensaje;
-        } else {
-            cerrarDialogo();
-            alert('¡Compra realizada! Se han añadido ' + formData.get('coins') + ' monedas a tu cuenta.');
-            window.location.reload();
-        }
-    });
+        <button type="button" id="cancelarPagoBtn">Cancelar</button>
+        <div id="paymentError" class="payment-error"></div>
+      </form>
+    </div>
+  `;
 }
 
+// Genera el overlay
+function generarDialogOverlay() {
+  return `<div id="dialogOverlay" class="overlay"></div>`;
+}
+
+// Genera la notificación
+function generarShopNotification() {
+  return `<div id="shop-notification" class="shop-notification"></div>`;
+}
+
+// Inyecta los elementos dinámicos si no existen
+function asegurarElementosDinamicos() {
+  const root = document.getElementById('dynamic-root');
+  if (!document.getElementById('dialogOverlay')) {
+    root.insertAdjacentHTML('beforeend', generarDialogOverlay());
+  }
+  if (!document.getElementById('shop-notification')) {
+    root.insertAdjacentHTML('beforeend', generarShopNotification());
+  }
+}
+
+// Muestra el formulario de pago
+function mostrarFormularioPago(coins, price) {
+  asegurarElementosDinamicos();
+  // Elimina cualquier formulario anterior
+  const oldDialog = document.getElementById('paymentDialog');
+  if (oldDialog) oldDialog.remove();
+
+  document.getElementById('dynamic-root').insertAdjacentHTML('beforeend', generarFormularioPago());
+  document.getElementById('paymentDialog').style.display = 'block';
+  document.getElementById('dialogOverlay').style.display = 'block';
+  document.getElementById('coinsInput').value = coins;
+  document.getElementById('priceInput').value = price;
+  document.getElementById('paymentError').innerText = '';
+
+  document.getElementById('cancelarPagoBtn').addEventListener('click', cerrarDialogo);
+
+  document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const response = await fetch('/shop/pay', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+    if (data.error) {
+      document.getElementById('paymentError').innerText = data.mensaje;
+    } else {
+      cerrarDialogo();
+      mostrarNotificacionShop('¡Compra realizada! Se han añadido ' + formData.get('coins') + ' monedas a tu cuenta.');
+      setTimeout(() => window.location.reload(), 2000);
+    }
+  });
+
+  document.getElementById('dialogOverlay').addEventListener('click', cerrarDialogo);
+}
+
+// Cierra el diálogo y overlay
 function cerrarDialogo() {
-    document.getElementById('paymentDialog')?.remove();
-    document.getElementById('dialogOverlay')?.remove();
+  const dialog = document.getElementById('paymentDialog');
+  const overlay = document.getElementById('dialogOverlay');
+  if (dialog) dialog.style.display = 'none';
+  if (overlay) overlay.style.display = 'none';
 }
+
+// Muestra la notificación
+function mostrarNotificacionShop(msg) {
+  asegurarElementosDinamicos();
+  const notif = document.getElementById('shop-notification');
+  notif.textContent = msg;
+  notif.style.display = 'block';
+  notif.style.opacity = '1';
+  setTimeout(() => {
+    notif.style.opacity = '0';
+    setTimeout(() => notif.style.display = 'none', 400);
+  }, 2500);
+}
+
+// Asigna evento a los botones de compra
+document.querySelectorAll('.buy-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    mostrarFormularioPago(this.dataset.coins, this.dataset.price);
+  });
+});
 </script>
 <%- include('partials/footer') %>

@@ -1,137 +1,255 @@
 .shop-container {
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 20px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-    text-align: center;
-    h1 { margin-bottom: 30px; }
-    .cards-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 24px;
-        justify-content: center;
-    }
-    .shop-card {
-        background: #f7f7f7;
-        border-radius: 10px;
-        padding: 24px 32px;
-        min-width: 180px;
-        box-shadow: 0 1px 6px rgba(0,0,0,0.07);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        .coins {
-            font-size: 1.4em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .price {
-            font-size: 1.1em;
-            margin-bottom: 18px;
-        }
-        .buy-btn {
-            background: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background 0.2s;
-            &:hover { background: #0056b3; }
-        }
-    }
+  max-width: 900px;
+  margin: 70px auto 20px auto; // <-- Cambia aquí el margin-top
+  padding: 32px 24px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  text-align: center;
+
+  h1 {
+    margin-bottom: 32px;
+    font-size: 2.2em;
+    color: #222;
+    font-weight: 700;
+  }
 }
-.dialog, .overlay {
-    position: fixed;
-    left: 0; top: 0; width: 100vw; height: 100vh;
-    z-index: 5000;
+
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  justify-content: center;
 }
-.dialog {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
-    max-width: 350px;
-    padding: 30px 24px;
-    margin: 100px auto 0 auto;
-    left: 50%; top: 10vh; transform: translateX(-50%);
-    z-index: 5100;
-    display: flex; flex-direction: column; gap: 12px;
-}
-.overlay {
-    background: rgba(0,0,0,0.3);
-    z-index: 5000;
-}
-#paymentDialog.dialog {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-    max-width: 350px;
-    padding: 32px 28px;
-    margin: 100px auto 0 auto;
-    left: 50%; top: 10vh; transform: translateX(-50%);
-    z-index: 5100;
-    display: flex; flex-direction: column; gap: 16px;
-    font-size: 1.05em;
-}
-#paymentDialog h2 {
+
+.shop-card {
+  background: #f8f8fc;
+  border-radius: 14px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+  padding: 28px 20px 22px 20px;
+  min-width: 200px;
+  max-width: 240px;
+  flex: 1 1 220px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+  }
+
+  .coins-img {
+    width: 54px;
+    margin-bottom: 16px;
+  }
+
+  .coins {
+    font-size: 1.25em;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 10px;
+  }
+
+  .price {
+    font-size: 1.1em;
+    color: #444;
     margin-bottom: 18px;
-    color: #007bff;
-    font-size: 1.3em;
+  }
+
+  .buy-btn {
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 0;
+    width: 100%;
+    font-size: 1.08em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+
+    &:hover {
+      background: #24913d;
+    }
+  }
 }
-#paymentDialog label {
-    margin-top: 8px;
-    margin-bottom: 2px;
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 24px rgba(0,0,0,0.18);
+  padding: 32px 24px;
+  z-index: 1001;
+  min-width: 320px;
+  max-width: 95vw;
+
+  h2 {
+    margin-bottom: 18px;
+    font-size: 1.3em;
+    color: #222;
+  }
+
+  label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 4px;
     font-weight: 500;
     color: #333;
     text-align: left;
-}
-#paymentDialog input[type="text"] {
+  }
+
+  input[type="text"] {
     width: 100%;
-    padding: 8px 10px;
-    border: 1.5px solid #007bff;
+    padding: 8px 6px;
     border-radius: 6px;
-    margin-bottom: 8px;
+    border: 1px solid #bbb;
+    margin-bottom: 6px;
     font-size: 1em;
-    transition: border 0.2s;
-}
-#paymentDialog input[type="text"]:focus {
-    border: 1.5px solid #0056b3;
-    outline: none;
-}
-#paymentDialog button[type="submit"] {
-    background: #007bff;
+    background: #fafaff;
+  }
+
+  button[type="submit"] {
+    background: #28a745;
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 10px 0;
-    margin-top: 10px;
-    font-size: 1.1em;
+    width: 100%;
+    font-size: 1.08em;
+    font-weight: 600;
+    margin-top: 12px;
     cursor: pointer;
-    transition: background 0.2s;
-}
-#paymentDialog button[type="submit"]:hover {
-    background: #0056b3;
-}
-#paymentDialog button[type="button"] {
+    transition: background 0.15s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+
+    &:hover {
+      background: #24913d;
+    }
+  }
+
+  button[type="button"] {
     background: #eee;
     color: #333;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 8px 0;
-    margin-top: 6px;
+    width: 100%;
     font-size: 1em;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-#paymentDialog button[type="button"]:hover {
-    background: #ccc;
-}
-#paymentError {
-    color: #d32f2f;
     margin-top: 8px;
-    min-height: 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+      background: #e0e0e0;
+    }
+  }
+}
+
+.overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 1000;
+}
+
+.shop-notification {
+  position: fixed;
+  top: 10%; // <-- Antes: 24px. Sube el valor para que quede debajo de la navbar
+  left: 50%;
+  transform: translateX(-50%);
+  background: #28a745;
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-size: 1.08em;
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  z-index: 1100;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+
+
+}
+
+.input-help {
+  color: #666;
+  font-size: 0.95em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.payment-error {
+  color: #d32f2f;
+  margin-top: 8px;
+  font-size: 1em;
+}
+
+/* --- Responsive Tablet --- */
+@media (max-width: 900px) {
+  .shop-container {
+    max-width: 99vw;
+    margin: 24px 0;
+    padding: 18px 6vw;
+  }
+  .cards-container {
+    gap: 18px;
+  }
+  .shop-card {
+    min-width: 160px;
+    max-width: 220px;
+    padding: 18px 8px 14px 8px;
     font-size: 0.98em;
+  }
+  .dialog {
+    min-width: 0;
+    padding: 18px 4vw;
+  }
+}
+
+/* --- Responsive Móvil --- */
+@media (max-width: 600px) {
+  .shop-container {
+    max-width: 100vw;
+    margin: 0;
+    padding: 15% 2vw;
+    border-radius: 0;
+    box-shadow: none;
+  }
+    .shop-notification {
+    top: 15%; // <-- También más abajo en móvil
+    padding: 10px 8px;
+    font-size: 1em;
+    border-radius: 6px;
+  }
+  .cards-container {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    padding: 0;
+  }
+  .shop-card {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+    padding: 12px 4px 10px 4px;
+    font-size: 0.95em;
+    border-radius: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .dialog {
+    width: 80%;
+    min-width: 0;
+    max-width: 99vw;
+    padding: 10px 2vw;
+    border-radius: 8px;
+  }
 }

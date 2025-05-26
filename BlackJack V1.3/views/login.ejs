@@ -1,24 +1,29 @@
 <%- include('partials/header')%>
 <link rel="stylesheet" href="/css/login.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<div class="main-content">
+  <form id="loginForm">
+      <h2 class="login-title">Iniciar Sesión</h2>
+      <p id="mensaje" class="mensaje"></p>
 
-<form id="loginForm">
-    <p id="mensaje" style="color: red; font-size: 16px; font-weight: bold; display: none;"></p>
+      <label for="correo">Correo o Nombre de Usuario</label>
+      <input type="text" name="correo" id="correo" required autocomplete="username">
+      <small id="correoError"></small>
 
-    <label for="correo">Correo o Nombre de Usuario:</label><br>
-    <input type="text" name="correo" id="correo" required onblur="verificarUsuario()"><br>
-    <small id="correoError" style="color: red;"></small><br>
+      <label for="contraseña">Contraseña</label>
+      <input type="password" name="contraseña" id="contraseña" required autocomplete="current-password">
 
-    <label for="contraseña">Contraseña:</label><br>
-    <input type="password" name="contraseña" id="contraseña" required><br>
-
-    <button type="submit">Iniciar Sesión</button>
-</form>
+      <button type="submit">Entrar</button>
+  </form>
+</div>
 
 <%- include('partials/footer')%>
 
 <script>
+document.getElementById('correo').addEventListener('blur', verificarUsuario);
+
 document.getElementById('loginForm').addEventListener('submit', async function(event) {
-    event.preventDefault(); // Evita la recarga de la página
+    event.preventDefault();
 
     const correo = document.getElementById('correo').value.trim();
     const contraseña = document.getElementById('contraseña').value.trim();
@@ -34,11 +39,12 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
     mensajeElemento.innerHTML = data.mensaje;
     mensajeElemento.style.display = 'block';
+    mensajeElemento.style.color = data.error ? 'red' : 'green';
 
     if (!data.error) {
-        mensajeElemento.style.color = 'green';
-    } else {
-        mensajeElemento.style.color = 'red';
+        setTimeout(() => {
+            window.location.href = data.redirect;
+        }, 1000);
     }
 });
 
@@ -60,29 +66,4 @@ async function verificarUsuario() {
         document.getElementById('correoError').innerHTML = '';
     }
 }
-document.getElementById('loginForm').addEventListener('submit', async function(event) {
-    event.preventDefault(); 
-
-    const correo = document.getElementById('correo').value.trim();
-    const contraseña = document.getElementById('contraseña').value.trim();
-
-    const response = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correo, contraseña })
-    });
-
-    const data = await response.json();
-    const mensajeElemento = document.getElementById('mensaje');
-
-    mensajeElemento.innerHTML = data.mensaje;
-    mensajeElemento.style.display = 'block';
-    mensajeElemento.style.color = data.error ? 'red' : 'green';
-
-    if (!data.error) {
-        setTimeout(() => {
-            window.location.href = data.redirect;
-        }, 1000); // Redirigir después de 1 segundo
-    }
-});
 </script>

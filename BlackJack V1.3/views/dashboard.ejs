@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body>
+    <%- include('partials/header') %>
 <div class="dashboard-container">
     <h1 class="dashboard-title">📊 Dashboard de Partidas</h1>
 
@@ -38,22 +39,34 @@
         <div id="create-user-dialog" class="dialog" style="display: none;"></div>
     </div>
 </div>
-
+<%- include('partials/footer') %>
 
 
 
 <script>
     function mostrarDialogo(type, id) {
-        if (!id) return; // Evita errores si no hay selección
-
-        fetch(`/get-info/${type}/${id}`)
-            .then(response => response.json())
-            .then(data => {
-                const dialog = document.getElementById(type === "player" ? "player-dialog" : "game-dialog");
-                dialog.innerHTML = generarHTMLDialogo(type, data);
-                dialog.style.display = "block";
-            })
-            .catch(error => console.error("Error al obtener datos:", error));
+        if (!id) return;
+        // Si es partida, usa el endpoint correcto que devuelve toda la info
+        if (type === "game") {
+            fetch(`/api/partida/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    const dialog = document.getElementById("game-dialog");
+                    dialog.innerHTML = generarHTMLDialogo(type, data);
+                    dialog.style.display = "block";
+                })
+                .catch(error => console.error("Error al obtener datos:", error));
+        } else {
+            // Para usuario sigue igual
+            fetch(`/get-info/player/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    const dialog = document.getElementById("player-dialog");
+                    dialog.innerHTML = generarHTMLDialogo(type, data);
+                    dialog.style.display = "block";
+                })
+                .catch(error => console.error("Error al obtener datos:", error));
+        }
     }
     function mostrarDialogoCreacion() {
         const dialog = document.getElementById("create-user-dialog");
@@ -62,10 +75,10 @@
                 <h2>Crear Nuevo Usuario</h2>
                 <form id="create-form">
                     <label for="nuevo-nombre">Nombre de Usuario:</label>
-                    <input type="text" id="nuevo-nombre" name="nuevo-nombre" required onblur="verificarUsuario()">
+                    <input type="text" id="nuevo-nombre" name="nuevo-nombre" required >
 
                     <label for="nuevo-correo">Correo Electrónico:</label>
-                    <input type="email" id="nuevo-correo" name="nuevo-correo" required onblur="verificarUsuario()">
+                    <input type="email" id="nuevo-correo" name="nuevo-correo" required>
 
                     <p id="error-message" class="error-message" style="display: none; color: red;"></p>
 
@@ -83,7 +96,7 @@
 
                     <div class="button-group">
                         <button type="button" onclick="crearUsuario()" id="crear-btn">✅ Crear</button>
-                        <button type="button" onclick="cerrarDialogo('create-user')" class="close-btn">❌ Cerrar</button>
+                        <button type="button" onclick="cerrarDialogo('create-user-dialog')" class="close-btn">❌ Cerrar</button>
                     </div>
                 </form>
             </div>
@@ -99,6 +112,7 @@ function generarHTMLDialogo(type, data) {
                 <form id="edit-form">
                     <label for="nombre">Nombre de Usuario:</label>
                     <input type="text" id="nombre" name="nombre" value="${data.nombre}">
+                    <button type="button" onclick="guardarNombre(${data.id})" style="margin-bottom:8px;background:#007bff;color:#fff;border:none;border-radius:8px;padding:8px 0;font-weight:600;cursor:pointer;">💾 Guardar Nombre</button>
 
                     <label for="correo">Correo Electrónico:</label>
                     <input type="email" id="correo" name="correo" value="${data.correo}" readonly>
@@ -126,21 +140,130 @@ function generarHTMLDialogo(type, data) {
             </div>
         `;
     } else {
+        // --- Información de la partida ---
+        let partida = data.partida || {};
+        let jugadores = Array.isArray(data.jugadores) ? data.jugadores.filter(j => j != null) : [];
+        let estado = jugadores.length > 0 ? "En juego" : "Sin jugadores";
+        // Calcula el bote sumando las apuestas de los jugadores
+        let bote = jugadores.reduce((acc, j) => acc + (parseFloat(j.apuesta) || 0), 0);
+
+        // Formatea la fecha de la partida
+        let fechaPartida = partida.fecha_partida
+            ? new Date(partida.fecha_partida).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
+            : "-";
+
+        // --- Datos de Partida ---
+        let partidaHTML = `
+            <div class="dialog-section">
+                <h3>🎲 Datos de Partida</h3>
+                <ul>
+                    <li><span class="campo">ID:</span> <span class="valor">${partida.id ?? '-'}</span></li>
+                    <li><span class="campo">Estado:</span> <span class="valor">${estado}</span></li>
+                    <li><span class="campo">Bote:</span> <span class="valor">${bote.toFixed(2)} €</span></li>
+                    <li><span class="campo">Fecha:</span> <span class="valor">${fechaPartida}</span></li>
+                    <li><span class="campo">Puntos Crupier:</span> <span class="valor">${partida.puntos_crupier ?? '-'}</span></li>
+                    <li><span class="campo">Puntos Jugador 1:</span> <span class="valor">${partida.puntos_jugador_1 ?? '-'}</span></li>
+                    <li><span class="campo">Puntos Jugador 2:</span> <span class="valor">${partida.puntos_jugador_2 ?? '-'}</span></li>
+                    <li><span class="campo">Puntos Jugador 3:</span> <span class="valor">${partida.puntos_jugador_3 ?? '-'}</span></li>
+                </ul>
+            </div>`;
+
+        // --- Jugadores ---
+        let jugadoresHTML = `<div class="dialog-section jugadores">
+            <h3>👥 Jugadores (${jugadores.length})</h3>
+            <ul>`;
+        jugadores.forEach((j, idx) => {
+            // El id lo cogemos de ParticipaEn (j.idUsuario)
+            let puntos = partida[`puntos_jugador_${idx + 1}`] ?? '-';
+            jugadoresHTML += `<li style="margin-bottom:10px;">
+                <ul>
+                    <li><span class="campo">Nombre:</span> <span class="valor">${j.nombre ?? '-'}</span></li>
+                    <li><span class="campo">ID:</span> <span class="valor">${j.idUsuario ?? '-'}</span></li>
+                    <li><span class="campo">Puntos:</span> <span class="valor">${puntos}</span></li>
+                    <li><span class="campo">Apuesta:</span> <span class="valor">${j.apuesta ?? '-'}</span></li>
+                </ul>
+            </li>`;
+        });
+        jugadoresHTML += `</ul></div>`;
+
+        // --- Crupier ---
+        let crupierHTML = "";
+        if (data.crupier) {
+            // Solo muestra id y puntos
+            const { id, puntos } = data.crupier;
+            crupierHTML = `<div class="dialog-section crupier">
+                <h3>🃏 Crupier</h3>
+                <ul>
+                    <li><span class="campo">ID:</span> <span class="valor">${id ?? '-'}</span></li>
+                    <li><span class="campo">Puntos:</span> <span class="valor">${puntos ?? '-'}</span></li>
+                </ul>
+            </div>`;
+        }
+
+        // --- Baraja ---
+        let barajaHTML = `<div class="dialog-section baraja">
+            <h3>🂡 Baraja</h3>
+            <div class="baraja-cartas" style="display:flex;gap:4px;flex-wrap:wrap;">`;
+
+        let cartas = [];
+        if (Array.isArray(data.baraja) && data.baraja.length > 0) {
+            cartas = data.baraja;
+        } else if (typeof data.baraja === "object" && data.baraja !== null && Array.isArray(data.baraja.baraja)) {
+            cartas = data.baraja.baraja;
+        } else if (typeof data.baraja === "string") {
+            try {
+                let barajaObj = JSON.parse(data.baraja);
+                if (Array.isArray(barajaObj.baraja)) {
+                    cartas = barajaObj.baraja;
+                }
+            } catch (e) {
+                cartas = [];
+            }
+        }
+
+        cartas.forEach(carta => {
+            // Si es formato {palo, numero, valor}
+            let valor = carta.numero ?? carta.valor ?? carta[0] ?? "-";
+            let palo = "";
+            switch ((carta.palo ?? carta[1] ?? "").toLowerCase()) {
+                case "corazones": palo = "♥"; break;
+                case "diamantes": palo = "♦"; break;
+                case "picas": palo = "♠"; break;
+                case "treboles": palo = "♣"; break;
+                default: palo = carta.palo ?? carta[1] ?? ""; break;
+            }
+            barajaHTML += `<div class="carta" style="border:1px solid #ccc;border-radius:6px;padding:8px 6px;min-width:36px;background:#fff;">
+                <span class="valor" style="font-size:1.2em;font-weight:bold;">${valor}${palo}</span>
+            </div>`;
+        });
+        barajaHTML += `</div></div>`;
+
+        // --- Layout principal ---
         return `
-            <h2>Partida ${data.id}</h2>
-            <p><strong>Jugadores:</strong> ${data.num_jugadores}</p>
-            <p><strong>Puntos Crupier:</strong> ${data.puntos_crupier}</p>
-            <p><strong>Ganador:</strong> ${data.ganador}</p>
-            <p><strong>Bote:</strong> ${data.bote} €</p>
-            <p><strong>Baraja utilizada:</strong> ${data.baraja}</p>
-            <button onclick="cerrarDialogo('game')">Cerrar</button>
+            <h2 class="dialog-title">Partida ${partida.id ?? '-'}</h2>
+            <div class="dialog-layout">
+                ${partidaHTML}
+                ${jugadoresHTML}
+                <div class="dialog-col">
+                    ${crupierHTML}
+                </div>
+                ${barajaHTML}
+            </div>
+            <button onclick="cerrarDialogo('game')" class="dialog-close-btn">Cerrar</button>
         `;
     }
 }
 
 
     function cerrarDialogo(type) {
-        document.getElementById(type === "player" ? "player-dialog" : "game-dialog").style.display = "none";
+        // Si es uno de los diálogos conocidos, usa su id, si no, usa el argumento como id directamente
+        let dialogId = "";
+        if (type === "player") dialogId = "player-dialog";
+        else if (type === "game") dialogId = "game-dialog";
+        else dialogId = type; // para 'create-user-dialog' u otros
+
+        const dialog = document.getElementById(dialogId);
+        if (dialog) dialog.style.display = "none";
     }
 
     function actualizarUsuario(userId) {
@@ -213,7 +336,55 @@ function crearUsuario() {
     .catch(error => console.error("Error al crear usuario:", error));
 }
 
+function guardarNombre(userId) {
+    const nombre = document.getElementById("nombre").value.trim();
+    if (!nombre) {
+        alert("El nombre no puede estar vacío.");
+        return;
+    }
+    fetch('/update-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, nombre })
+    }).then(response => response.json())
+    .then(data => alert(data.message))
+    .catch(error => console.error("Error al guardar nombre:", error));
+}
 
+function cargarCartasPartida(partidaId) {
+    if (!partidaId) return;
+
+    fetch(`/api/game/${partidaId}`)
+        .then(response => response.json())
+        .then(data => {
+            let cartasHTML = "";
+            if (Array.isArray(data.baraja) && data.baraja.length > 0) {
+                cartasHTML = `<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:12px 0;">` +
+                    data.baraja.map(carta => `
+                        <div style="border:1px solid #ccc;border-radius:6px;padding:8px 6px;min-width:36px;background:#fff;">
+                            <span style="font-size:1.2em;font-weight:bold;">${carta.valor || carta[0]}</span>
+                            <span style="font-size:1.2em;">${carta.palo || carta[1]}</span>
+                        </div>
+                    `).join('') +
+                    `</div>`;
+            } else {
+                cartasHTML = `<p>No hay cartas registradas para esta partida.</p>`;
+            }
+
+            // Muestra las cartas en el diálogo de la partida
+            const dialog = document.getElementById("game-dialog");
+            dialog.innerHTML = `
+                <h2>Cartas de la Partida ${data.idPartida || partidaId}</h2>
+                ${cartasHTML}
+                <button onclick="cerrarDialogo('game')">Cerrar</button>
+            `;
+            dialog.style.display = "block";
+        })
+        .catch(error => {
+            alert("No se pudieron cargar las cartas de la partida.");
+            console.error("Error al cargar cartas:", error);
+        });
+}
 </script>
 
 

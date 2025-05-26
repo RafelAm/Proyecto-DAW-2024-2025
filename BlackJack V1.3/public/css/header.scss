@@ -1,11 +1,11 @@
 .navbar {
     font-family: Arial, sans-serif;
-    position: fixed;
+    //position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 70px; // o el valor que uses realmente
-    background-color: #007bff;
+    background-color: #ff6f61;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -110,7 +110,7 @@
             button {
                 background: none;
                 border: none;
-                color: #007bff;
+                color: #ff6f61;
                 font-size: 1em;
                 cursor: pointer;
                 width: 100%; // Opcional: que el botón ocupe todo el ancho del dropdown
@@ -156,7 +156,7 @@
             transition: max-height 1.0s ease, opacity 0.9s ease, transform 0.9s ease;
             display: flex;
             flex-direction: column;
-            background-color: #007bff;
+            background-color: #ff6f61;
             position: absolute;
             top: 60px;
             left: 0;
@@ -200,17 +200,19 @@
         button {
             background: none;
             border: none;
-            color: white;
-            font-size: 1.1rem;
+            color: #fff;         // Letras blancas
             cursor: pointer;
             padding: 10px 0;
             width: 100%;
             text-align: center;
             transition: color 0.2s;
+            margin: 0 auto;      // Centrado horizontal
+            display: block;
         }
         button:hover {
             color: #ffe600;
             text-decoration: underline;
+            background: none;    // Sin fondo también al hacer hover
         }
     }
 
