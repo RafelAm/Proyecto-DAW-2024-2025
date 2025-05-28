@@ -30,7 +30,6 @@
             
             </div>
         </div>
-        <button class="random-game">Partida Aleatoria</button>
     </section>
 
 
@@ -71,8 +70,6 @@
 fetch("/game")
     .then(response => response.json()) // Convertir la respuesta a JSON
     .then(games => {
-        console.log("Lista de partidas:", games); // Verificar datos en consola
-
         const gamesContainer = document.querySelector(".games"); // Selecciona el contenedor principal
 
         gamesContainer.innerHTML = "";
@@ -144,15 +141,6 @@ fetch("/game")
         setInterval(function () {
             showSlide((index + 1) % slides.length);
         }, 4000); // Cambia cada 4 segundos para un ritmo más pausado
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const randomGameButton = document.querySelector(".random-game");
-
-        randomGameButton.addEventListener("click", function () {
-            const randomId = Math.floor(Math.random() * 10) + 1; // ID aleatorio entre 1 y 10
-            window.location.href = `/game/${randomId}`;
-        });
     });
 
 

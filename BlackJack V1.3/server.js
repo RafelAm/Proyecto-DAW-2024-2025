@@ -6,47 +6,47 @@ import { Crupier, Jugador, Partida } from './public/js/party.js'; // Importa la 
 import http from "http"; // Importa el modulo http
 import { Server } from "socket.io"; // Importa el modulo socket.io
 import multer from "multer";
-
 import ejs from "ejs"; // Importa el modulo ejs
 import path from "path";
 import cors from "cors";
-import db from "./dbConnection.js";
-
+import db from "./init-db.js";
+import dotenv from "dotenv";
+dotenv.config();
 // Inciailizacion del servidor y modulos
 const app = express() 
 const server = http.createServer(app); 
 const io = new Server(server); 
 const __dirname = path.resolve();
 const upload = multer({ storage: multer.memoryStorage() });
-
 // Configuración de EJS
 app.set('appName', 'Blackjack Game');
 app.set("view engine", 'ejs')
 app.set('views', path.join(__dirname, '/views'));
 app.use(express.static(path.join(__dirname, 'public')));
-
+const PORT = process.env.PORT || 3000;
 // Constantes de partidas
 const games = {};
 const MAX_JUGADORES = 4;
 const MIN_PARTIDAS = 4; // Partidas iniciales mínimas
 const MAX_PARTIDAS = 20; // Máximo de partidas simultáneas
-
+const turnTimeouts = {};
 // Middleware de sesión
 const sessionMiddleware = session({
     secret: 'session-secret-secure', 
     resave: false,                   
-    saveUninitialized: true,        
+    saveUninitialized: false,        
     cookie: {
         maxAge: 24 * 60 * 60 * 1000, 
-        sameSite: 'lax',             // Cambia a 'lax' para permitir redirecciones
-        secure: false,               // Asegúrate de que sea 'false' en desarrollo
+        sameSite: 'lax',    
+        secure: false, 
     },
 });
+
 // Middleware de sesión para Socket.io
 app.use(sessionMiddleware);
 
 io.use(sharedSession(sessionMiddleware, {
-    autoSave: true, 
+    autoSave: false, 
 }));
 
 
@@ -173,7 +173,7 @@ socket.on('addPlayer', async ({ roomId, username, socketId }) => {
     if (game.jugadores.length < MAX_JUGADORES && !game.empezada) {
         try {
             // Consulta asincrónica para obtener datos del usuario
-            const [rows] = await db.query('SELECT id, dinero FROM Usuarios WHERE nombre = ?', [username]);
+            const [rows] = await db.query('SELECT id, dinero FROM usuarios WHERE nombre = ?', [username]);
             if (!rows.length) {
                 return socket.emit('error', 'Usuario no encontrado en la base de datos.');
             }
@@ -243,7 +243,7 @@ socket.on('realizarApuesta', async ({ roomId, monto, fichas }) => {
     }
 
     try {
-        const [rows] = await db.query('SELECT dinero FROM Usuarios WHERE nombre = ?', [username]);
+        const [rows] = await db.query('SELECT dinero FROM usuarios WHERE nombre = ?', [username]);
         if (!rows.length) return socket.emit('error', 'Usuario no encontrado en la base de datos.');
         let dineroActual = parseInt(rows[0].dinero, 10);
 
@@ -254,7 +254,7 @@ socket.on('realizarApuesta', async ({ roomId, monto, fichas }) => {
         game.jugadores[playerIndex].balance -= monto;
 
         dineroActual -= monto;
-        await db.execute('UPDATE Usuarios SET dinero = ? WHERE nombre = ?', [dineroActual, username]);
+        await db.execute('UPDATE usuarios SET dinero = ? WHERE nombre = ?', [dineroActual, username]);
 
         // --- RECALCULA EL TOTAL DE APUESTAS ---
         game.totalApuestas = game.jugadores
@@ -263,7 +263,17 @@ socket.on('realizarApuesta', async ({ roomId, monto, fichas }) => {
 
         socket.emit('apuestaRealizada', { balance: dineroActual });
 
+        // Emitir el estado actualizado a todos
         emitirGameStateATodos(roomId, game, io);
+
+        // Si la cuenta atrás de apuestas sigue activa, muestra el formulario solo a los que no han apostado
+        if (game.countDown === true) {
+            game.jugadores.forEach(jugador => {
+                if (jugador.tipo !== "Crupier" && jugador.apuesta === 0) {
+                    io.to(jugador.socketId).emit("mostrarFormularioApuesta");
+                }
+            });
+        }
 
     } catch (err) {
         console.error('Error al procesar la apuesta:', err);
@@ -343,7 +353,7 @@ async function emitirGameState(emisor, game, socketId, username) {
     let imagenesPerfil = {};
     if (nombresJugadores.length > 0) {
         const [rows] = await db.query(
-            `SELECT nombre, imagenPerfil FROM Usuarios WHERE nombre IN (${nombresJugadores.map(() => '?').join(',')})`,
+            `SELECT nombre, imagenPerfil FROM usuarios WHERE nombre IN (${nombresJugadores.map(() => '?').join(',')})`,
             nombresJugadores
         );
         rows.forEach(row => {
@@ -450,24 +460,23 @@ async function iniciarCuentaAtras(roomId, game, db, io) {
                         game.repartirCartas();
                         // Inicializa el turno al primer jugador activo
                         game.turnoActual = game.jugadores.findIndex(j => j.tipo === "Player" && !j.plant);
-                        emitirGameStateATodos(roomId, game, io);
-
-                        // 🔽 Añade aquí:
+                        emitirGameStateATodos(roomId, game, io); // <--- AQUÍ SÍ
                         iniciarTemporizadorTurno(roomId, game, io);
 
                         // --- registro en base de datos ---
                         // 🔹 **1. Insertar la partida en la tabla `Partida`**
                         const [resultadoPartida] = await db.execute(
-                            `INSERT INTO Partida (num_jugadores, puntos_crupier, puntos_jugador_1, puntos_jugador_2, puntos_jugador_3, ganador, bote, fecha_partida) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                            `INSERT INTO partida (num_jugadores, puntos_crupier, puntos_jugador_1, puntos_jugador_2, puntos_jugador_3, ganador, bote, fecha_partida, url_partida) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
                             [
                                 game.jugadores.length,
-                                game.jugadores[game.jugadores.length - 1]?.puntaje ?? 0, // Crupier (último jugador)
-                                game.jugadores[0]?.puntaje ?? 0, // Primer jugador (si existe)
-                                game.jugadores[1]?.puntaje ?? 0, // Segundo jugador (si existe)
-                                game.jugadores[2]?.puntaje ?? 0, // Tercer jugador (si existe)
-                                "Pendiente", // Se actualizará al final
-                                game.bote ?? 0
+                                game.jugadores[game.jugadores.length - 1]?.puntaje ?? 0,
+                                game.jugadores[0]?.puntaje ?? 0,
+                                game.jugadores[1]?.puntaje ?? 0,
+                                game.jugadores[2]?.puntaje ?? 0,
+                                "Pendiente",
+                                game.bote ?? 0,
+                                ""
                             ]
                         );
 
@@ -480,14 +489,14 @@ async function iniciarCuentaAtras(roomId, game, db, io) {
 
                         // 🔹 **3. Actualizar la tabla `Partida` para agregar la URL**
                         await db.execute(
-                            `UPDATE Partida SET url_partida = ? WHERE id = ?`,
+                            `UPDATE partida SET url_partida = ? WHERE id = ?`,
                             [urlPartida, idPartida]
                         );
 
 
                         const barajaString = JSON.stringify(game.baraja);
                         await db.execute(
-                            `INSERT INTO Baraja (idPartida, baraja, fecha_partida) VALUES (?, ?, CURDATE())`,
+                            `INSERT INTO baraja (idPartida, baraja, fecha_partida) VALUES (?, ?, CURDATE())`,
                             [idPartida, barajaString]
                         );
 
@@ -496,7 +505,7 @@ async function iniciarCuentaAtras(roomId, game, db, io) {
                         // **4. Registrar cada jugador en `ParticipaEn`**
                         for (const jugador of game.jugadores.slice(0, game.jugadores.length - 1)) { // Excluye al crupier
                             await db.execute(
-                                `INSERT INTO ParticipaEn (idUsuario, idPartida, puntos, estado, apuesta, ganador, fecha_partida) 
+                                `INSERT INTO participaen (idUsuario, idPartida, puntos, estado, apuesta, ganador, fecha_partida) 
                                 VALUES (?, ?, ?, ?, ?, ?, CURDATE())`,
                                 [
                                     jugador.id ?? null,
@@ -510,13 +519,13 @@ async function iniciarCuentaAtras(roomId, game, db, io) {
 
 
                             let idCrupier;
-                            const [nuevoCrupier] = await db.execute(`INSERT INTO Crupier (derrotas, victorias) VALUES (0, 0)`);
+                            const [nuevoCrupier] = await db.execute(`INSERT INTO crupier (derrotas, victorias) VALUES (0, 0)`);
                             
                             idCrupier = nuevoCrupier.insertId;
                             game.idCrupier = idCrupier;
                             // **6. Registrar el crupier en `ParticipaEnCrupier`**
                             await db.execute(
-                                `INSERT INTO ParticipaEnCrupier (idCrupier, idPartida, puntos, estado, ganador, fecha_partida) 
+                                `INSERT INTO participaencrupier (idCrupier, idPartida, puntos, estado, ganador, fecha_partida) 
                                 VALUES (?, ?, ?, ?, ?, CURDATE())`,
                                 [
                                     idCrupier,
@@ -539,7 +548,7 @@ async function iniciarCuentaAtras(roomId, game, db, io) {
                         for (const s of sockets) {
                             const user = s.data.username;
                             if (!game.jugadores.some(j => j.nombre === user)) {
-                                s.emit("mostrarBotonUnirse");
+                                socket.emit("mostrarBotonUnirse");
                             }
                         }
 
@@ -688,11 +697,11 @@ for (const jugador of game.jugadores.filter(j => j.tipo === "Player")) {
     }
 
     // Consulta si ya existe registro de estadísticas
-    const [rows] = await db.query('SELECT * FROM EstadisticasUsuario WHERE idUsuario = ?', [jugador.id]);
+    const [rows] = await db.query('SELECT * FROM estadisticasusuario WHERE idUsuario = ?', [jugador.id]);
     if (rows.length === 0) {
         // Inserta nuevo registro
         await db.execute(
-            `INSERT INTO EstadisticasUsuario 
+            `INSERT INTO estadisticasusuario 
                 (idUsuario, total_partidas, total_victorias, total_derrotas, total_dinero_ganado, total_dinero_perdido)
              VALUES (?, 1, ?, ?, ?, ?)`,
             [
@@ -706,7 +715,7 @@ for (const jugador of game.jugadores.filter(j => j.tipo === "Player")) {
     } else {
         // Actualiza registro existente
         await db.execute(
-            `UPDATE EstadisticasUsuario 
+            `UPDATE estadisticasusuario 
              SET 
                 total_partidas = total_partidas + 1,
                 total_victorias = total_victorias + ?,
@@ -723,9 +732,9 @@ for (const jugador of game.jugadores.filter(j => j.tipo === "Player")) {
             ]
         );
     }
-    // Actualiza el dinero del usuario en la tabla Usuarios
+    // Actualiza el dinero del usuario en la tabla usuarios
     await db.execute(
-        `UPDATE Usuarios SET dinero = ? WHERE id = ?`,
+        `UPDATE usuarios SET dinero = ? WHERE id = ?`,
         [jugador.balance, jugador.id]
     );
 
@@ -737,16 +746,16 @@ let crupierVictoria = game.ganadores.some(g => g.nombre === "Crupier") ? 1 : 0;
 let crupierDerrota = crupierVictoria === 1 ? 0 : 1;
 // **3. Actualizar crupier**
 const [resultadoUpdate] = await db.execute(
-    `UPDATE Crupier SET victorias = victorias + ?, derrotas = derrotas + ? WHERE id = ?`,
+    `UPDATE crupier SET victorias = victorias + ?, derrotas = derrotas + ? WHERE id = ?`,
     [crupierVictoria, crupierDerrota, idCrupier]
 );
 
 
 await db.execute(
-    `UPDATE ParticipaEnCrupier SET ganador = ?, puntos = ? WHERE idCrupier = ? AND idPartida = ?`,
+    `UPDATE participaencrupier SET ganador = ?, puntos = ? WHERE idCrupier = ? AND idPartida = ?`,
     [
         ganadoresString ?? "Error",
-        game.jugadores[game.jugadores.length-1]?.puntaje ?? 0, // <-- CORREGIDO
+        game.jugadores[game.jugadores.length-1]?.puntaje ?? 0, // Crupier siempre es el último
         idCrupier ?? null,
         idPartida ?? null
     ]
@@ -757,7 +766,7 @@ game.jugadores.filter(j => j.tipo === "Player").forEach((jugador, index) => {
     if (index < 3) puntosJugadores[index] = jugador.puntaje ?? 0; // <-- CORREGIDO
 });
 await db.execute(
-    `UPDATE Partida SET ganador = ?, puntos_crupier = ?, puntos_jugador_1 = ?, puntos_jugador_2 = ?, puntos_jugador_3 = ? WHERE id = ?`,
+    `UPDATE partida SET ganador = ?, puntos_crupier = ?, puntos_jugador_1 = ?, puntos_jugador_2 = ?, puntos_jugador_3 = ? WHERE id = ?`,
     [
         ganadoresString ?? "Error",
         game.jugadores[game.jugadores.length-1]?.puntaje ?? 0, // <-- CORREGIDO
@@ -788,7 +797,7 @@ await db.execute(
                 const user = s.data.username;
                 // Si el usuario no está en la lista de jugadores, es espectador
                 if (!game.jugadores.some(j => j.nombre === user)) {
-                    s.emit("mostrarBotonUnirse");
+                    socket.emit("mostrarBotonUnirse");
                 }
             }
         }, 20000);
@@ -798,21 +807,14 @@ await db.execute(
         io.to(roomId).emit("error", "Hubo un problema al finalizar la partida.");
     }
 }
-    // Mostrar botones según el estado de la sesión
-    function obtenerBotonesSegunUsuario(usuario) {
-        if (!usuario) {
-            return ['btnLogin', 'btnRegister'];
-        }
-        return ['btnPedirCarta', 'btnPlantarse'];
-    }
+
     const usuario = socket.handshake.session?.username;
-    const botones = obtenerBotonesSegunUsuario(usuario);
-    socket.emit('mostrarBotones', botones);
 });
 
 // Middleware para manejar CORS y JSON
 app.use(cors({
-    origin: ['localhost:3000', '127.0.0.1:3000'],
+    origin: 'http://localhost:3000',
+    methods: ["GET","POST"],
     credentials: true
 }))
 app.use(express.json())
@@ -828,7 +830,7 @@ app.use(async (req, res, next) => {
 
     if (req.session.username) {
         try {
-            const [rows] = await db.query("SELECT rol, imagenPerfil FROM Usuarios WHERE nombre = ?", [req.session.username]);
+            const [rows] = await db.query("SELECT rol, imagenPerfil FROM usuarios WHERE nombre = ?", [req.session.username]);
             if (rows.length > 0) {
                 res.locals.isAdmin = rows[0].rol === "Administrador";
                 if (rows[0].imagenPerfil) {
@@ -878,8 +880,8 @@ app.get('/profile/:username', checkAuth, async (req, res) => {
             SELECT u.id, u.nombre, u.correo, u.dinero, u.rol, u.fecha_registro, u.imagenPerfil,
                    e.total_partidas, e.total_victorias, e.total_derrotas, 
                    e.total_dinero_ganado, e.total_dinero_perdido
-            FROM Usuarios u
-            LEFT JOIN EstadisticasUsuario e ON u.id = e.idUsuario
+            FROM usuarios u
+            LEFT JOIN estadisticasusuario e ON u.id = e.idUsuario
             WHERE u.nombre = ?
         `, [username]);
 
@@ -907,9 +909,9 @@ app.get('/profile/:username', checkAuth, async (req, res) => {
 // Dashboard de admin
 app.get('/dashboard', checkAuth, checkAdmin, async (req, res) => {
     try {
-        const partidas = await db.query("SELECT * FROM Partida ORDER BY fecha_partida DESC LIMIT 10");
-        const jugadores = await db.query("SELECT id, nombre, correo, dinero, rol FROM Usuarios ORDER BY nombre ASC");
-        const usuarioActual = await db.query("SELECT * FROM Usuarios WHERE nombre = ?", [req.session.username]);
+        const partidas = await db.query("SELECT * FROM partida ORDER BY fecha_partida DESC LIMIT 10");
+        const jugadores = await db.query("SELECT id, nombre, correo, dinero, rol FROM usuarios ORDER BY nombre ASC");
+        const usuarioActual = await db.query("SELECT * FROM usuarios WHERE nombre = ?", [req.session.username]);
 
         res.render('dashboard', { 
             partidas: partidas[0] || [], 
@@ -938,7 +940,7 @@ app.get("/api/game/:id", async (req, res) => {
     try {
         // Busca la última baraja usada en la partida
         const [barajaRows] = await db.query(
-            "SELECT baraja FROM Baraja WHERE idPartida = ? ORDER BY fecha_partida DESC LIMIT 1",
+            "SELECT baraja FROM baraja WHERE idPartida = ? ORDER BY fecha_partida DESC LIMIT 1",
             [gameId]
         );
 
@@ -969,7 +971,6 @@ function checkAndOpenNewGame() {
     for (let i = 1; i <= MIN_PARTIDAS; i++) {
         if (!games[i]) {
             games[i] = new Partida([new Crupier()], i);
-            console.log(`Partida base restaurada: /game/${i}`);
         }
     }
 
@@ -994,7 +995,6 @@ function checkAndOpenNewGame() {
         const currentIds = Object.keys(games).map(Number);
         const newGameId = currentIds.length > 0 ? Math.max(...currentIds) + 1 : 1;
         games[newGameId] = new Partida([new Crupier()], newGameId);
-        console.log(`¡Nueva partida creada! ID: /game/${newGameId}`);
     }
 }
 
@@ -1012,7 +1012,6 @@ app.post('/register', upload.single('imagenPerfil'), async (req, res) => {
     }
     let mensajeError = '';
 
-    console.log('nombre:', nombre, 'correo:', correo, 'contraseña:', contra);
     if (!nombre || !correo || !contra) {
         return res.json({ error: true, mensaje: 'Todos los campos son obligatorios.' });
     }
@@ -1025,17 +1024,17 @@ app.post('/register', upload.single('imagenPerfil'), async (req, res) => {
     if (contra.length < 6) mensajeError = "La contraseña debe tener al menos 6 caracteres.";
 
     try {
-        const [rowsNombre] = await db.query('SELECT id FROM Usuarios WHERE nombre = ?', [nombre]);
+        const [rowsNombre] = await db.query('SELECT id FROM usuarios WHERE nombre = ?', [nombre]);
         if (rowsNombre.length > 0) mensajeError = 'El nombre de usuario ya está en uso.';
 
-        const [rowsCorreo] = await db.query('SELECT id FROM Usuarios WHERE correo = ?', [correo]);
+        const [rowsCorreo] = await db.query('SELECT id FROM usuarios WHERE correo = ?', [correo]);
         if (rowsCorreo.length > 0) mensajeError = 'El correo ya está registrado.';
 
         if (mensajeError) return res.json({ error: true, mensaje: mensajeError });
 
         const contraseñaHash = await bcrypt.hash(contra, 10);
         await db.execute(
-            'INSERT INTO Usuarios (nombre, correo, contraseña_Hash, dinero, rol, imagenPerfil) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO usuarios (nombre, correo, contraseña_Hash, dinero, rol, imagenPerfil) VALUES (?, ?, ?, ?, ?, ?)',
             [nombre, correo, contraseñaHash, 100, "Jugador", imagenPerfil]
         );
 
@@ -1050,21 +1049,21 @@ app.post('/register', upload.single('imagenPerfil'), async (req, res) => {
 // Verificar si el nombre de usuario ya existe
 app.get('/verificar-nombre', async (req, res) => {
     const { nombre } = req.query;
-    const [rows] = await db.query('SELECT id FROM Usuarios WHERE nombre = ?', [nombre]);
+    const [rows] = await db.query('SELECT id FROM usuarios WHERE nombre = ?', [nombre]);
     res.json({ existe: rows.length > 0 });
 });
 // Verificar si el correo ya existe
 app.get('/verificar-correo', async (req, res) => {
     const { correo } = req.query;
-    const [rows] = await db.query('SELECT id FROM Usuarios WHERE correo = ?', [correo]);
+    const [rows] = await db.query('SELECT id FROM usuarios WHERE correo = ?', [correo]);
     res.json({ existe: rows.length > 0 });
 });
 // Verificar si el usuario y el correo ya existen
 app.get('/verificar-usuario', async (req, res) => {
     const { correo } = req.query;
     
-    const [rowsCorreo] = await db.query('SELECT id FROM Usuarios WHERE correo = ?', [correo]);
-    const [rowsNombre] = await db.query('SELECT id FROM Usuarios WHERE nombre = ?', [correo.toLowerCase()]);
+    const [rowsCorreo] = await db.query('SELECT id FROM usuarios WHERE correo = ?', [correo]);
+    const [rowsNombre] = await db.query('SELECT id FROM usuarios WHERE nombre = ?', [correo.toLowerCase()]);
 
     res.json({ existe: rowsCorreo.length > 0 || rowsNombre.length > 0 });
 });
@@ -1087,11 +1086,11 @@ app.post('/login', async (req, res) => {
 
     try {
         let usuario;
-        const [rowsCorreo] = await db.query('SELECT * FROM Usuarios WHERE correo = ?', [correo]);
+        const [rowsCorreo] = await db.query('SELECT * FROM usuarios WHERE correo = ?', [correo]);
         if (rowsCorreo.length > 0) {
             usuario = rowsCorreo[0];
         } else {
-            const [rowsNombre] = await db.query('SELECT * FROM Usuarios WHERE nombre = ?', [correo.toLowerCase()]);
+            const [rowsNombre] = await db.query('SELECT * FROM usuarios WHERE nombre = ?', [correo.toLowerCase()]);
             if (rowsNombre.length > 0) {
                 usuario = rowsNombre[0];
             }
@@ -1114,7 +1113,6 @@ app.post('/login', async (req, res) => {
                 console.error('Error al guardar la sesión:', err);
                 return res.json({ error: true, mensaje: 'Error interno del servidor.' });
             }
-            console.log('Sesión después del login:', req.session);
             return res.json({ error: false, mensaje: `Bienvenido ${usuario.nombre}`, redirect: '/' });
         });
 
@@ -1134,51 +1132,10 @@ app.get('/session-status', (req, res) => {
 });
 
 
-// Consultar usuario por nombre
-app.get('/profile/:username', checkAuth, async (req, res) => {
-    const { username } = req.params;
 
-    try {
-        const results = await db.query(`
-            SELECT u.id, u.nombre, u.correo, u.dinero, u.rol, u.fecha_registro, 
-                   e.total_partidas, e.total_victorias, e.total_derrotas, 
-                   e.total_dinero_ganado, e.total_dinero_perdido
-            FROM Usuarios u
-            LEFT JOIN EstadisticasUsuario e ON u.id = e.idUsuario
-            WHERE u.nombre = ?
-        `, [username]);
 
-        if (results.length === 0 || results[0].length === 0) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
 
-        res.render('profile', { 
-            user: results[0][0], 
-            loggedIn: !!req.session.username, 
-            sessionUser: req.session.username 
-        });
-    } catch (err) {
-        console.error("Error al obtener perfil:", err.message);
-        res.status(500).json({ error: "Hubo un problema al cargar los datos." });
-    }
-});
 
-app.get('/dashboard', checkAuth, checkAdmin, async (req, res) => {
-    try {
-        const partidas = await db.query("SELECT * FROM Partida ORDER BY fecha_partida DESC LIMIT 10");
-        const jugadores = await db.query("SELECT id, nombre, correo, dinero, rol FROM Usuarios ORDER BY nombre ASC");
-        const usuarioActual = await db.query("SELECT * FROM Usuarios WHERE nombre = ?", [req.session.username]);
-
-        res.render('dashboard', { 
-            partidas: partidas[0] || [], 
-            jugadores: jugadores[0] || [], 
-            user: usuarioActual[0][0] || null
-        });
-    } catch (err) {
-        console.error("Error al obtener datos del dashboard:", err.message);
-        res.status(500).json({ error: "Error al cargar el dashboard." });
-    }
-});
 
 
 app.post('/update-user', async (req, res) => {
@@ -1189,7 +1146,7 @@ app.post('/update-user', async (req, res) => {
     }
 
     try {
-        await db.query("UPDATE Usuarios SET dinero = ? WHERE id = ?", [dinero, userId]); // Ahora usa el ID de usuario seleccionado
+        await db.query("UPDATE usuarios SET dinero = ? WHERE id = ?", [dinero, userId]); // Ahora usa el ID de usuario seleccionado
         res.json({ message: "Dinero actualizado correctamente." });
     } catch (err) {
         res.status(500).json({ error: "Error al actualizar dinero." });
@@ -1205,7 +1162,7 @@ app.post('/update-role', async (req, res) => {
     }
 
     try {
-        await db.query("UPDATE Usuarios SET rol = ? WHERE id = ?", [rol, userId]); // Modifica el usuario seleccionado
+        await db.query("UPDATE usuarios SET rol = ? WHERE id = ?", [rol, userId]); // Modifica el usuario seleccionado
         res.json({ message: "Rol actualizado correctamente." });
     } catch (err) {
         res.status(500).json({ error: "Error al actualizar rol." });
@@ -1220,7 +1177,7 @@ app.delete('/delete-user', async (req, res) => {
     }
 
     try {
-        await db.query("DELETE FROM Usuarios WHERE id = ?", [userId]); // Usa el ID del usuario
+        await db.query("DELETE FROM usuarios WHERE id = ?", [userId]); // Usa el ID del usuario
         res.json({ message: "Usuario eliminado correctamente." });
     } catch (err) {
         console.error("Error al eliminar usuario:", err.message);
@@ -1239,7 +1196,7 @@ app.post('/create-user', async (req, res) => {
         // Hasheamos la contraseña antes de guardarla en la base de datos
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        await db.query("INSERT INTO Usuarios (nombre, correo, contraseña_hash, dinero, rol) VALUES (?, ?, ?, ?, ?)", 
+        await db.query("INSERT INTO usuarios (nombre, correo, contraseña_hash, dinero, rol) VALUES (?, ?, ?, ?, ?)", 
                       [nombre, correo, hashedPassword, dinero || 1000, rol || "Jugador"]);
 
         res.json({ message: `Usuario '${nombre}' creado con éxito.` });
@@ -1255,9 +1212,9 @@ app.get('/get-info/:type/:id', async (req, res) => {
     try {
         let result;
         if (type === "player") {
-            result = await db.query("SELECT * FROM Usuarios WHERE id = ?", [id]);
+            result = await db.query("SELECT * FROM usuarios WHERE id = ?", [id]);
         } else if (type === "game") {
-            result = await db.query("SELECT * FROM Partida WHERE id = ?", [id]);
+            result = await db.query("SELECT * FROM partida WHERE id = ?", [id]);
         }
         res.json(result[0][0] || {});
     } catch (err) {
@@ -1284,17 +1241,17 @@ app.post('/profile/update', checkAuth, upload.single('imagenPerfil'), async (req
     try {
         if (imagenPerfil) {
             await db.query(
-                'UPDATE Usuarios SET nombre = ?, correo = ?, imagenPerfil = ? WHERE nombre = ?',
+                'UPDATE usuarios SET nombre = ?, correo = ?, imagenPerfil = ? WHERE nombre = ?',
                 [nombre, correo, imagenPerfil, username]
             );
         } else {
             await db.query(
-                'UPDATE Usuarios SET nombre = ?, correo = ? WHERE nombre = ?',
+                'UPDATE usuarios SET nombre = ?, correo = ? WHERE nombre = ?',
                 [nombre, correo, username]
             );
         }
         req.session.username = nombre; // Actualiza el nombre en la sesión
-        res.json({ mensaje: 'Perfil actualizado correctamente.' });
+        res.redirect("/")
     } catch (error) {
         console.error('Error al actualizar perfil:', error);
         res.status(500).json({ error: 'Error al actualizar perfil.' });
@@ -1316,15 +1273,14 @@ app.post('/logout', checkAuth, (req, res) => {
   });
   
 
-server.listen(3000)
-console.log(app.get('appName') + " http://localhost:3000")
+
 
 async function checkAdmin(req, res, next) {
     if (!req.session.username) {
         return res.redirect("/login");
     }
     // Consulta el usuario y su rol
-    const [rows] = await db.query("SELECT rol FROM Usuarios WHERE nombre = ?", [req.session.username]);
+    const [rows] = await db.query("SELECT rol FROM usuarios WHERE nombre = ?", [req.session.username]);
     if (!rows.length || rows[0].rol !== "Administrador") {
         return res.status(403).send("Acceso denegado: solo para administradores.");
     }
@@ -1363,14 +1319,14 @@ app.post('/shop/pay', checkAuth, upload.none(), async (req, res) => {
 
     // Añadir monedas al usuario
     try {
-        await db.query("UPDATE Usuarios SET dinero = dinero + ? WHERE nombre = ?", [parseInt(coins, 10), req.session.username]);
+        await db.query("UPDATE usuarios SET dinero = dinero + ? WHERE nombre = ?", [parseInt(coins, 10), req.session.username]);
         return res.json({ error: false, mensaje: "Compra realizada correctamente." });
     } catch (err) {
         return res.json({ error: true, mensaje: "Error al procesar la compra." });
     }
 });
 
-const turnTimeouts = {}; // { [roomId]: timeoutId }
+
 
 app.post('/update-name', async (req, res) => {
     const { userId, nombre } = req.body;
@@ -1380,7 +1336,7 @@ app.post('/update-name', async (req, res) => {
     }
 
     try {
-        await db.query("UPDATE Usuarios SET nombre = ? WHERE id = ?", [nombre, userId]);
+        await db.query("UPDATE usuarios SET nombre = ? WHERE id = ?", [nombre, userId]);
         res.json({ message: "Nombre actualizado correctamente." });
     } catch (err) {
         console.error("Error al actualizar nombre:", err.message);
@@ -1392,29 +1348,29 @@ app.get('/api/partida/:id', async (req, res) => {
     const { id } = req.params;
     try {
         // 1. Info principal de la partida
-        const [partidaRows] = await db.query("SELECT * FROM Partida WHERE id = ?", [id]);
+        const [partidaRows] = await db.query("SELECT * FROM partida WHERE id = ?", [id]);
         const partida = partidaRows[0] || null;
 
         // 2. Jugadores de la partida
         const [jugadoresRows] = await db.query(`
             SELECT pe.*, u.nombre, u.correo, u.dinero, u.rol
-            FROM ParticipaEn pe
-            JOIN Usuarios u ON pe.idUsuario = u.id
+            FROM participaen pe
+            JOIN usuarios u ON pe.idUsuario = u.id
             WHERE pe.idPartida = ?
         `, [id]);
 
         // 3. Crupier de la partida
         const [crupierRows] = await db.query(`
             SELECT pc.*, c.*
-            FROM ParticipaEnCrupier pc
-            LEFT JOIN Crupier c ON pc.idCrupier = c.id
+            FROM participaencrupier pc
+            LEFT JOIN crupier c ON pc.idCrupier = c.id
             WHERE pc.idPartida = ?
         `, [id]);
         const crupier = crupierRows[0] || null;
 
-        // 4. Baraja de la partida (última registrada)
+        // 4. Baraja de la partida
         const [barajaRows] = await db.query(`
-            SELECT baraja FROM Baraja WHERE idPartida = ? ORDER BY fecha_partida DESC LIMIT 1
+            SELECT baraja FROM baraja WHERE idPartida = ? ORDER BY fecha_partida DESC LIMIT 1
         `, [id]);
         let baraja = null;
         if (barajaRows.length > 0) {
@@ -1437,3 +1393,11 @@ app.get('/api/partida/:id', async (req, res) => {
     }
 });
 
+
+
+server.listen(PORT, '0.0.0.0', () => {
+  let url;
+
+    url = `http://localhost:${PORT}`;
+  console.log(`${app.get('appName')} corriendo en: ${url}`);
+});

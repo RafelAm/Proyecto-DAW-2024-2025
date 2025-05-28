@@ -41,7 +41,9 @@ const socket = io();
 let gameStateGlobal;
 let currentUsername = "";
 let puedeMostrarBotones = false;
-
+const roomId = window.location.pathname.split("/").pop();
+let botonesContainerGlobal = null;
+let globalBotonesConfig = null;
 
 socket.on("gameState", (gameState) => {
     if (!gameState || !gameState.state) {
@@ -49,6 +51,7 @@ socket.on("gameState", (gameState) => {
         return;
     }
 
+    console.log("Recibido gameState:", gameState);
     gameStateGlobal = gameState;
     currentSocketId = gameState.currentSocketId;
     currentUsername = gameState.currentUsername;
@@ -75,7 +78,6 @@ socket.on("gameState", (gameState) => {
         }
     }
 
-
 });
 
 
@@ -92,9 +94,7 @@ const iconosPalos = {
     "Treboles": "♣",
     "Picas": "♠"
 };
-const roomId = window.location.pathname.split("/").pop();
-let botonesContainerGlobal = null;
-let globalBotonesConfig = null;
+
 
 socket.emit("joinRoom", roomId);
 // Actualizar la lista de jugadores
@@ -130,6 +130,7 @@ socket.on("mostrarFormularioApuesta", () => {
 
 // Mostrar botones de acción
 socket.on("mostrarBotones", (botonesConfig) => {
+    console.log("Recibidos botones de acción:", botonesConfig);
     globalBotonesConfig = Array.isArray(botonesConfig) ? botonesConfig : []; // Asegurar que sea un array
 
     if (botonesContainerGlobal && globalBotonesConfig.length > 0) {
@@ -582,18 +583,19 @@ socket.on("bloquearAcciones", (bloquear) => {
 
 // Gestionar botones de acción
 function gestionarBotonesInterfaz(gameState) {
+    if (!botonesContainerGlobal) return;
     const turnoActual = gameState.turnoActual;
     const jugadorEnTurno = gameState.state.jugadores[turnoActual];
+    const esMiTurno = jugadorEnTurno && jugadorEnTurno.nombre === currentUsername;
+    const partidaEnCurso = !gameState.state.reiniciando && !gameState.state.countDown;
 
-    const esMiTurno = jugadorEnTurno.socketId === currentSocketId;
-    const btnPedirCarta = document.getElementById("btnPedirCarta");
-    const btnPlantarse = document.getElementById("btnPlantarse");
-    const betForm = document.getElementById("betForm");
-    if (btnPedirCarta && btnPlantarse) {
-        btnPedirCarta.disabled = !esMiTurno || jugadorEnTurno.plant;
-        btnPlantarse.disabled = !esMiTurno || jugadorEnTurno.plant;
+    console.log({ turnoActual, jugadorEnTurno, currentUsername, esMiTurno, partidaEnCurso });
+
+    if (esMiTurno && partidaEnCurso) {
+        renderizarBotones(['btnPedirCarta', 'btnPlantarse'], botonesContainerGlobal, false);
+    } else {
+        renderizarBotones([], botonesContainerGlobal, false);
     }
-
 }
 
     socket.on("mostrarBotonUnirse", () => {

@@ -149,10 +149,7 @@ export class Partida {
     iniciarNuevoJuego() {
         if (this.reiniciando) return; 
         this.reiniciando = true;
-        console.log("Esperando 20 segundos para reiniciar...");
-
         setTimeout(() => {
-            console.log("Reiniciando partida...");
             this.idPartida = 0;
             this.idCrupier = 0;
             this.ruta = this.ruta;
@@ -248,9 +245,7 @@ export class Partida {
             const jugadoresValidos = this.jugadores.filter(j =>
                 j.tipo === "Player" && j.plant && j.puntaje <= 21
             );
-            if (jugadoresValidos.length === 0) return; // Nadie válido a superar
-
-            // El crupier intenta superar al mayor puntaje de los jugadores válidos
+            if (jugadoresValidos.length === 0) return;
             let maxPuntaje = Math.max(...jugadoresValidos.map(j => j.puntaje));
             while (
                 this.jugadores[posCrupier].puntaje < 17 ||
@@ -286,19 +281,16 @@ export class Partida {
         }
         return ganadores;
     }
-      distribuirPremios() {
+
+    distribuirPremios() {
     const posCrupier = this.jugadores.findIndex(j => j.tipo === "Crupier");
     const crupier = this.jugadores[posCrupier];
-
-    let totalApuestas = 0; // <-- CORREGIDO: inicializa la variable
-
+    let totalApuestas = 0;
     this.jugadores.forEach(jugador => {
         if (jugador.tipo === "Player") {
             totalApuestas += jugador.apuesta;
         }
     });
-
-    console.log(`Total de apuestas en juego: ${totalApuestas}`);
 
     // El crupier solo gana si TODOS los jugadores pierden (se pasan o tienen menos puntos)
     let algunJugadorGana = false;
@@ -308,35 +300,21 @@ export class Partida {
 
         if (jugador.puntaje > 21) {
             // Jugador pierde su apuesta
-            console.log(`El jugador ${jugador.nombre} se pasó y pierde su apuesta.`);
         } else if (crupier.puntaje > 21) {
             // Crupier se pasa, todos los jugadores que no se pasaron ganan el doble
             jugador.balance += jugador.apuesta * 2;
-            console.log(`El crupier se pasó; el jugador ${jugador.nombre} gana ${jugador.apuesta * 2}.`);
             algunJugadorGana = true;
         } else if (jugador.puntaje > crupier.puntaje) {
             let premio = jugador.apuesta * 2;
             jugador.balance += premio;
-            console.log(`El jugador ${jugador.nombre} gana ${premio}.`);
             algunJugadorGana = true;
         } else if (jugador.puntaje === crupier.puntaje) {
             jugador.balance += jugador.apuesta; // Recupera su apuesta
-            console.log(`El jugador ${jugador.nombre} empata y recupera su apuesta.`);
             algunJugadorGana = true;
-        } else {
-            // Jugador pierde su apuesta
-            console.log(`El jugador ${jugador.nombre} pierde su apuesta.`);
         }
 
         jugador.apuesta = 0; // Reseteamos la apuesta del jugador
     });
-
-    // Si ningún jugador gana o empata, el crupier se queda con todas las apuestas
-    if (!algunJugadorGana) {
-        console.log(`El crupier gana y se queda con ${totalApuestas} en apuestas restantes.`);
-    } else {
-        console.log(`Apuestas restantes después de repartir premios: 0`);
-    }
 
     this.totalApuestas = 0; // Siempre se reinicia el total de apuestas al final de la ronda
 }
@@ -348,9 +326,6 @@ export class Partida {
     }
 
     async reiniciar() {
-        console.log("Reiniciando partida...");
-        // Espera 20 segundos antes de reiniciar (esto lo controla el backend, puedes quitarlo aquí)
-        // await new Promise(resolve => setTimeout(resolve, 20000));
         const crupier = this.jugadores.find(j => j.tipo === "Crupier");
         if (crupier) {
             crupier.cartas = [];
@@ -370,7 +345,6 @@ export class Partida {
         this.empezada = false;
         this.reiniciada = true;
         this.totalApuestas = 0;
-        // Quita la llamada a this.iniciarNuevoJuego();
     }
         
 

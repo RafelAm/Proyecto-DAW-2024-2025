@@ -49,7 +49,7 @@ body .tbl {
 body .mesa {
   position: relative;
   width: 90vw;
-  height: 70vh;
+  height: 75vh;
   margin: 90px auto 0 auto;
   background: radial-gradient(ellipse at center, #388e3c 60%, #1b5e20 100%);
   border-radius: 50% 50% 45% 45%/60% 60% 40% 40%;
@@ -85,7 +85,7 @@ body .mesa .jugador-pos-1, body .mesa .jugador-pos-2, body .mesa .jugador-pos-3,
 }
 body .mesa .jugador-pos-1 {
   left: 2%;
-  bottom: 10%;
+  bottom: 30%;
   right: auto;
   top: auto;
   transform: none;
@@ -97,7 +97,7 @@ body .mesa .jugador-pos-2 {
 }
 body .mesa .jugador-pos-3 {
   right: 2%;
-  bottom: 10%;
+  bottom: 30%;
   left: auto;
   top: auto;
   transform: none;
@@ -924,4 +924,447 @@ body .chat-titulo {
   font-family: "Lobster", cursive, Arial, sans-serif;
   font-size: 1.3em;
   color: #388e3c;
+}
+
+@media screen and (orientation: portrait) and (max-width: 1024px) {
+  body > * {
+    display: none !important;
+  }
+  body::before {
+    content: "Por favor, pon el dispositivo en horizontal para jugar";
+    position: fixed;
+    z-index: 999999;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fffde7;
+    color: #d32f2f;
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    filter: none;
+  }
+}
+@media screen and (orientation: landscape) and (max-width: 1024px) {
+  html, body {
+    font-size: 13px !important;
+  }
+  .mesa {
+    width: 90vw !important;
+    height: 75vh !important;
+    padding: 2vh 0 !important;
+    border-radius: 32px !important;
+    margin: 2vh auto 0 auto !important;
+    min-height: 420px !important;
+    max-height: 90vh !important;
+    box-sizing: border-box;
+  }
+  .jugador-box {
+    width: 100% !important;
+  }
+  .jugador-box, .jugador-box.yo-mismo {
+    min-width: 240px !important;
+    max-width: 340px !important;
+    height: 10% !important;
+    padding: 16px 10px 12px 10px !important;
+    font-size: 1em !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    position: relative;
+  }
+  .name, .jugador-nombre {
+    width: 100% !important;
+    text-align: center !important;
+    background: #fff !important;
+    font-family: "Lobster", cursive, Arial, sans-serif !important;
+    font-size: 1.2em !important;
+    font-weight: bold !important;
+    color: #222 !important;
+    margin-bottom: 8px !important;
+    border-radius: 6px !important;
+    margin-top: 0 !important;
+    position: static !important;
+    display: block !important;
+  }
+  .jugador-cartas {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+    position: static !important;
+    top: unset !important;
+    left: unset !important;
+    transform: none !important;
+  }
+  .cartas {
+    margin: 0 0 0 23px;
+    width: 100% !important;
+    position: static !important;
+  }
+  .cards, .cardsCr {
+    width: 34px !important;
+    height: 48px !important;
+    font-size: 1rem !important;
+  }
+  .img-Crupier,
+  .img-Player {
+    display: none !important;
+  }
+  .apuesta-encima, .apuesta-total {
+    font-size: 0.92em !important;
+    padding: 2px 6px !important;
+    min-width: 32px !important;
+  }
+  .contenedor-apuesta {
+    min-width: 140px !important;
+    padding: 6px 8px !important;
+    font-size: 0.92em !important;
+  }
+  .jugador-botones button,
+  .apuesta-botones button {
+    padding: 5px 8px !important;
+    font-size: 0.92em !important;
+    min-width: 70px !important;
+  }
+  .balance-usuario,
+  .total-apuestas-usuario {
+    font-size: 0.95em !important;
+    padding: 5px 10px !important;
+    right: 8px !important;
+  }
+  #chat-container {
+    display: none !important;
+  }
+}
+@media screen and (orientation: landscape) and (max-width: 700px) {
+  html, body {
+    font-size: 10px !important;
+    overflow-x: hidden !important;
+    background: #fffde7 !important;
+  }
+  nav, .navbar, #navbar, .navigation {
+    display: none !important;
+  }
+  .mesa {
+    width: 99vw !important;
+    height: 80vh !important;
+    min-height: 120px !important;
+    max-height: 88vh !important;
+    margin: 1vh auto 0 auto !important;
+    padding: 1vh 0 !important;
+    border-radius: 14px !important;
+    box-sizing: border-box;
+  }
+  .jugador-box, .jugador-box.yo-mismo {
+    min-width: 80px !important;
+    max-width: 120px !important;
+    width: 90vw !important;
+    padding: 4px 2px 4px 2px !important;
+    font-size: 0.8em !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    position: relative !important;
+    box-shadow: 0 2px 8px rgba(34, 34, 34, 0.2666666667) !important;
+  }
+  .jugador-pos-1, .jugador-pos-2, .jugador-pos-3, .jugador-pos-4 {
+    min-width: 50px !important;
+    max-width: 90px !important;
+    width: 22vw !important;
+    left: unset !important;
+    right: unset !important;
+  }
+  .jugador-pos-1 {
+    left: 2% !important;
+    bottom: 38% !important;
+  }
+  .jugador-pos-2 {
+    left: 50% !important;
+    bottom: 2% !important;
+    transform: translateX(-50%) !important;
+  }
+  .jugador-pos-3 {
+    right: 2% !important;
+    bottom: 38% !important;
+  }
+  .jugador-pos-4 {
+    left: 50% !important;
+    top: 2% !important;
+    transform: translateX(-50%) !important;
+  }
+  .name, .jugador-nombre {
+    width: 100% !important;
+    text-align: center !important;
+    background: #fff !important;
+    font-size: 0.95em !important;
+    font-weight: bold !important;
+    color: #222 !important;
+    margin-bottom: 2px !important;
+    border-radius: 6px !important;
+    margin-top: 0 !important;
+    position: static !important;
+    display: block !important;
+  }
+  .jugador-cartas {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+    position: static !important;
+    top: unset !important;
+    left: unset !important;
+    transform: none !important;
+    gap: 1px !important;
+  }
+  .cartas {
+    margin: 0 !important;
+    width: 100% !important;
+    position: static !important;
+  }
+  .cards, .cardsCr {
+    width: 16px !important;
+    height: 24px !important;
+    font-size: 0.7rem !important;
+    margin: 0 1px 1px 0 !important;
+  }
+  .img-Crupier,
+  .img-Player {
+    display: none !important;
+  }
+  .apuesta-encima, .apuesta-total {
+    font-size: 0.7em !important;
+    padding: 1px 2px !important;
+    min-width: 10px !important;
+  }
+  .contenedor-apuesta {
+    min-width: 40px !important;
+    padding: 2px 2px !important;
+    font-size: 0.7em !important;
+    border-radius: 8px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  .jugador-botones button,
+  .apuesta-botones button {
+    padding: 2px 4px !important;
+    font-size: 0.7em !important;
+    min-width: 20px !important;
+    border-radius: 3px !important;
+  }
+  .balance-usuario,
+  .total-apuestas-usuario {
+    font-size: 0.7em !important;
+    padding: 2px 4px !important;
+    right: 2px !important;
+    top: 2px !important;
+    border-radius: 6px !important;
+  }
+  #chat-container {
+    display: none !important;
+  }
+  #timerDisplay {
+    font-size: 0.7em !important;
+    padding: 2px 4px !important;
+    top: 2% !important;
+    right: 2% !important;
+    border-radius: 4px !important;
+  }
+  #mensaje, .mensaje, #notificacionCentrada, .notificacion-centrada {
+    font-size: 0.8em !important;
+    padding: 6px 8px !important;
+    min-width: 40px !important;
+    max-width: 98vw !important;
+    border-radius: 6px !important;
+  }
+}
+@media screen and (orientation: landscape) and (max-width: 900px) {
+  html, body {
+    font-size: 10px !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    background: #fffde7 !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+  }
+  nav, .navbar, #navbar, .navigation {
+    display: none !important;
+  }
+  .mesa {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 24px !important;
+    box-sizing: border-box;
+    position: relative !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+  d .Crupier {
+    position: absolute !important;
+    top: 80px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 60vw !important;
+    min-width: 100px !important;
+    max-width: 260px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    z-index: 10 !important;
+  }
+  .jugador-pos-1 {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
+    top: auto !important;
+    min-width: 100px !important;
+    max-width: 260px !important;
+    width: 60vw !important;
+    bottom: 90px !important;
+    z-index: 10 !important;
+  }
+  .jugador-pos-2, .jugador-pos-3, .jugador-pos-4 {
+    display: none !important;
+  }
+  .jugador-box, .jugador-box.yo-mismo {
+    min-width: 100px !important;
+    max-width: 260px !important;
+    width: 60vw !important;
+    padding: 6px 6px 6px 6px !important;
+    font-size: 0.95em !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    box-shadow: 0 2px 8px rgba(34, 34, 34, 0.2666666667) !important;
+    position: static !important;
+    margin: 0 auto !important;
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 18px;
+  }
+  .jugador-box .puntos {
+    position: static !important;
+    margin: 0 0 10px 0 !important;
+    display: block !important;
+    font-size: 1.1em !important;
+    background: #fffde7 !important;
+    border-radius: 6px !important;
+    padding: 4px 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1333333333) !important;
+    color: #222 !important;
+    width: auto !important;
+    left: unset !important;
+    bottom: unset !important;
+    top: unset !important;
+    right: unset !important;
+    z-index: 1 !important;
+    align-self: flex-start !important;
+  }
+  .balance-usuario {
+    position: fixed !important;
+    top: 18px !important;
+    right: 18px !important;
+    font-size: 1em !important;
+    padding: 6px 12px !important;
+    border-radius: 10px !important;
+    z-index: 100 !important;
+  }
+  .total-apuestas-usuario {
+    position: fixed !important;
+    top: 70px !important;
+    right: 18px !important;
+    font-size: 0.9em !important;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    z-index: 100 !important;
+  }
+  .jugador-botones {
+    justify-content: flex-start !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+    width: 100% !important;
+  }
+  .jugador-botones button,
+  .apuesta-botones button {
+    padding: 6px 10px !important;
+    font-size: 1em !important;
+    min-width: 80px !important;
+    border-radius: 6px !important;
+  }
+  .jugador-cartas {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+    position: static !important;
+    gap: 4px !important;
+  }
+  .cartas {
+    margin: 0 !important;
+    width: 100% !important;
+    position: static !important;
+  }
+  .cards, .cardsCr {
+    width: 32px !important;
+    height: 48px !important;
+    font-size: 1rem !important;
+    margin: 0 2px 2px 0 !important;
+  }
+  .img-Crupier,
+  .img-Player {
+    display: none !important;
+  }
+  .apuesta-encima, .apuesta-total {
+    font-size: 0.9em !important;
+    padding: 2px 6px !important;
+    min-width: 24px !important;
+  }
+  .contenedor-apuesta {
+    min-width: 80px !important;
+    padding: 4px 8px !important;
+    font-size: 0.9em !important;
+    border-radius: 10px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    position: absolute !important;
+    bottom: 60px !important;
+  }
+  #chat-container {
+    display: none !important;
+  }
+  #timerDisplay {
+    font-size: 0.9em !important;
+    padding: 4px 8px !important;
+    top: 4% !important;
+    right: 4% !important;
+    border-radius: 6px !important;
+  }
+  #mensaje, .mensaje, #notificacionCentrada, .notificacion-centrada {
+    font-size: 1em !important;
+    padding: 10px 12px !important;
+    min-width: 120px !important;
+    max-width: 96vw !important;
+    border-radius: 10px !important;
+  }
 }/*# sourceMappingURL=party.css.map */

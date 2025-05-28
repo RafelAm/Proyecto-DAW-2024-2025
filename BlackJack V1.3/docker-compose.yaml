@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8
+    container_name: blackjack
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: blackjackdb
+      MYSQL_USER: db_user
+      MYSQL_PASSWORD: blackjackdbpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: blackjack_app
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: db_user
+      DB_PASSWORD: blackjackdbpass
+      DB_NAME: blackjackdb
+      NODE_ENV: production
+      DOCKER: true
+    command: ["sh", "-c", "node /app/server.js"]
+
+volumes:
+  db_data:
