@@ -12,7 +12,9 @@ Una vez arrancado se genera automaticamente 4 usuarios
 - usuario2 → pru3b@12345  
 - usuario3 →  pru3b@12346
 
-
+Si no lo quieres arrancar en docker puedes abrir server.js en vs code y en una terminal cmd ejecutar
+node server.js 
+ten en cuenta que debes tener instalado mysql y node para poder ejecutarlos
 
 
 ## 📜 Objetivos Generales
