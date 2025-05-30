@@ -7,10 +7,10 @@ Descomprimir archivos en una carpeta y con una terminal posicionada en la carpet
 docker-compose up --build
 
 Una vez arrancado se genera automaticamente 4 usuarios 
-    admin → r@f3l2003.07.
-    usuario1 → pru3b@1234 
-    usuario2 → pru3b@12345  
-    usuario3 →  pru3b@12346
+- admin → r@f3l2003.07.
+- usuario1 → pru3b@1234 
+- usuario2 → pru3b@12345  
+- usuario3 →  pru3b@12346
 
 
 
