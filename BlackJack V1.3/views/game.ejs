@@ -46,7 +46,6 @@ let botonesContainerGlobal = null;
 let globalBotonesConfig = null;
 
 socket.on("gameState", (gameState) => {
-    console.log("Recibido gameState:", gameState);
     if (!gameState || !gameState.state) {
         console.error("Error: gameState no está definido correctamente.");
         return;
