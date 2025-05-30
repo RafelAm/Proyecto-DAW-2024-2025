@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Lobster&display=swap"
       rel="stylesheet"
     />
-    <title>Pruebas</title>
+    <title>Partida</title>
   </head>
   <body>
     <%- include('partials/header') %>
@@ -46,12 +46,11 @@ let botonesContainerGlobal = null;
 let globalBotonesConfig = null;
 
 socket.on("gameState", (gameState) => {
+    console.log("Recibido gameState:", gameState);
     if (!gameState || !gameState.state) {
         console.error("Error: gameState no está definido correctamente.");
         return;
     }
-
-    console.log("Recibido gameState:", gameState);
     gameStateGlobal = gameState;
     currentSocketId = gameState.currentSocketId;
     currentUsername = gameState.currentUsername;
@@ -130,7 +129,6 @@ socket.on("mostrarFormularioApuesta", () => {
 
 // Mostrar botones de acción
 socket.on("mostrarBotones", (botonesConfig) => {
-    console.log("Recibidos botones de acción:", botonesConfig);
     globalBotonesConfig = Array.isArray(botonesConfig) ? botonesConfig : []; // Asegurar que sea un array
 
     if (botonesContainerGlobal && globalBotonesConfig.length > 0) {
@@ -588,8 +586,6 @@ function gestionarBotonesInterfaz(gameState) {
     const jugadorEnTurno = gameState.state.jugadores[turnoActual];
     const esMiTurno = jugadorEnTurno && jugadorEnTurno.nombre === currentUsername;
     const partidaEnCurso = !gameState.state.reiniciando && !gameState.state.countDown;
-
-    console.log({ turnoActual, jugadorEnTurno, currentUsername, esMiTurno, partidaEnCurso });
 
     if (esMiTurno && partidaEnCurso) {
         renderizarBotones(['btnPedirCarta', 'btnPlantarse'], botonesContainerGlobal, false);

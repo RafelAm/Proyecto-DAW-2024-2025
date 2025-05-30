@@ -1,3 +1,9 @@
+/**
+ * Clase base para los participantes de la partida (jugadores y crupier).
+ * @class Participante
+ * @author Rafel Amengual Tomás
+ * @date 2024-05-28
+ */
 class  Participante{
     puntaje;
     cartas;
@@ -9,6 +15,13 @@ class  Participante{
 
 }
 
+/**
+ * Clase que representa al crupier de la partida.
+ * @class Crupier
+ * @extends Participante
+ * @author Rafel Amengual Tomás
+ * @date 2024-05-28
+ */
 export class Crupier extends Participante{
     id;
     nombre;
@@ -22,6 +35,13 @@ export class Crupier extends Participante{
 
 }
 
+/**
+ * Clase que representa a un jugador de la partida.
+ * @class Jugador
+ * @extends Participante
+ * @author Rafel Amengual Tomás
+ * @date 2024-05-28
+ */
 export class Jugador extends Participante {
     id;
     socketId;
@@ -43,6 +63,12 @@ export class Jugador extends Participante {
     }
 }
 
+/**
+ * Clase que representa la baraja de cartas.
+ * @class Baraja
+ * @author Rafel Amengual Tomás
+ * @date 2024-05-28
+ */
 class Baraja{
 
     cards 
@@ -62,7 +88,9 @@ class Baraja{
         this.baraja = baraja;
         this.shuffle();
     }
-
+    /**
+     * Mezcla la baraja de cartas.
+     */
     shuffle(){
         for(let i = 0; i < this.baraja.length; i++){
             let nIndex = Math.floor(Math.random() * (this.baraja.length-1));
@@ -77,7 +105,12 @@ class Baraja{
 
 
 
-
+/**
+ * Clase que representa una partida de BlackJack.
+ * @class Partida
+ * @author Rafel Amengual Tomás
+ * @date 2024-05-28
+ */
 export class Partida {
     constructor(jugadores, ruta) {
         this.idPartida = 0;
@@ -95,6 +128,10 @@ export class Partida {
 
     }
 
+    /**
+     * Devuelve el estado serializado de la partida.
+     * @returns {Object} Estado de la partida.
+     */
     toJSON() {
         if (this.plantados === this.jugadores.length - 1 && this.plantados >= 1) {
             this.iniciarNuevoJuego();
@@ -146,6 +183,9 @@ export class Partida {
     }
 
 
+    /**
+     * Inicia un nuevo juego tras finalizar la ronda.
+     */
     iniciarNuevoJuego() {
         if (this.reiniciando) return; 
         this.reiniciando = true;
@@ -173,7 +213,9 @@ export class Partida {
 
     
     
-
+    /**
+     * Reparte dos cartas a cada jugador y al crupier.
+     */
     repartirCartas() {
         let pActivos = 0;
         for (let i = 0; i < this.jugadores.length; i++) {
@@ -182,7 +224,7 @@ export class Partida {
             switch (this.jugadores[i].tipo) {
                 case "Player":
                     for (let j = 0; j < 2; j++) {
-                        let index = Math.floor(Math.random() * (this.baraja.baraja.length - 1));
+                        let index = this.baraja.baraja.length - 1;
                         this.jugadores[i].cartas.push(this.baraja.baraja[index]);
                         this.baraja.baraja.splice(index, 1);
                     }
@@ -192,7 +234,7 @@ export class Partida {
 
                 case "Crupier":
                     for (let j = 0; j < 2; j++) {
-                        let index = Math.floor(Math.random() * (this.baraja.baraja.length - 1));
+                        let index = this.baraja.baraja.length - 1;
                         this.jugadores[i].cartas.push(this.baraja.baraja[index]);
                         this.baraja.baraja.splice(index, 1);
                     }
@@ -201,8 +243,12 @@ export class Partida {
         }
     }
 
+    /**
+     * Da una carta al jugador indicado.
+     * @param {number} i - Índice del jugador.
+     */
     pedirCarta(i) {
-        let index = Math.floor(Math.random() * (this.baraja.baraja.length - 1));
+        let index = this.baraja.baraja.length - 1;
         this.jugadores[i].cartas.push(this.baraja.baraja[index]);
         this.baraja.baraja.splice(index, 1);
         this.comprobarTotalCartas(i);
@@ -210,6 +256,10 @@ export class Partida {
         this.pasado(i);
     }
 
+    /**
+     * Calcula el total de puntos de las cartas de un jugador.
+     * @param {number} j - Índice del jugador.
+     */
     comprobarTotalCartas(j) {
         this.jugadores[j].puntaje = 0;
 
@@ -230,6 +280,10 @@ export class Partida {
         }
     }
 
+    /**
+     * Marca al jugador como plantado.
+     * @param {number} j - Índice del jugador.
+     */
     plantarse(j) {
         this.jugadores[j].plant = true;
         this.plantados++;
@@ -237,7 +291,9 @@ export class Partida {
         this.pasado(j);
         this.jugarCrupier(j);
     }
-
+    /**
+     * Lógica de juego del crupier tras plantarse los jugadores.
+     */
     jugarCrupier() {
         const posCrupier = this.jugadores.length - 1;
         if (this.plantados === this.jugadores.length - 1) {
@@ -258,14 +314,20 @@ export class Partida {
             }
         }
     }
-
+    /**
+     * Marca al jugador como pasado si supera 21 puntos.
+     * @param {number} i - Índice del jugador.
+     */
     pasado(i){
         if(this.jugadores[i].puntaje > 21){
         this.jugadores[i].plant = true
         this.plantados++
         }
     }
-
+    /**
+     * Devuelve el/los ganador(es) de la ronda.
+     * @returns {Array} Array de jugadores ganadores.
+     */
     ganadorPuntuacion() {
         let maxPuntaje = 0;
         let ganadores = [];
@@ -281,7 +343,9 @@ export class Partida {
         }
         return ganadores;
     }
-
+    /**
+     * Distribuye los premios a los jugadores según el resultado.
+     */
     distribuirPremios() {
     const posCrupier = this.jugadores.findIndex(j => j.tipo === "Crupier");
     const crupier = this.jugadores[posCrupier];
@@ -320,11 +384,18 @@ export class Partida {
 }
 
     
-    
+    /**
+     * Actualiza la puntuación del jugador.
+     * @param {number} i - Índice del jugador.
+     */    
     mostrarPuntuacion(i) {
         this.comprobarTotalCartas(i);
     }
 
+    /**
+     * Reinicia la partida para una nueva ronda.
+     * @async
+     */
     async reiniciar() {
         const crupier = this.jugadores.find(j => j.tipo === "Crupier");
         if (crupier) {
@@ -347,7 +418,11 @@ export class Partida {
         this.totalApuestas = 0;
     }
         
-
+    /**
+     * Realiza la apuesta de un jugador.
+     * @param {number} indexJugador - Índice del jugador.
+     * @param {number} monto - Monto apostado.
+     */
     realizarApuesta(indexJugador, monto) {
         const jugador = this.jugadores[indexJugador];
         if (monto > jugador.balance) {

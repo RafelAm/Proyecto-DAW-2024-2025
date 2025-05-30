@@ -1021,7 +1021,6 @@ body {
   .name, .jugador-nombre {
     width: 100% !important;
     text-align: center !important;
-    background: #fff !important;
     font-family: "Lobster", cursive, Arial, sans-serif !important;
     font-size: 1.2em !important;
     font-weight: bold !important;
@@ -1086,70 +1085,60 @@ body {
   }
 }
 
-@media screen and (orientation: landscape) and (max-width: 700px) {
+@media screen and (orientation: landscape) and (max-width: 940px) {
   html, body {
-    font-size: 10px !important;
-    overflow-x: hidden !important;
-    background: #fffde7 !important;
+    font-size: 13px !important;
   }
-
-  // Oculta la barra de navegación en móvil horizontal
-  nav, .navbar, #navbar, .navigation {
-    display: none !important;
-  }
-
   .mesa {
-    width: 99vw !important;
-    height: 80vh !important;
-    min-height: 120px !important;
-    max-height: 88vh !important;
-    margin: 1vh auto 0 auto !important;
-    padding: 1vh 0 !important;
-    border-radius: 14px !important;
-    box-sizing: border-box;
-  }
-
-  .jugador-box, .jugador-box.yo-mismo {
-    min-width: 80px !important;
-    max-width: 120px !important;
     width: 90vw !important;
-    padding: 4px 2px 4px 2px !important;
-    font-size: 0.8em !important;
+    height: 75vh !important;         // Más alta para aprovechar el alto de la tablet
+    padding: 2vh 0 !important;
+    border-radius: 32px !important;
+    margin: 2vh auto 0 auto !important;
+    min-height: 260px !important;    // Altura mínima para tablets pequeñas
+    max-height: 90vh !important;     // No sobrepasar el alto de la pantalla
+    box-sizing: border-box;
+  
+}
+.jugador-box{
+    width: 100% !important;
+}
+.jugador-en-turno{
+    box-shadow: none !important;
+}
+  .jugador-box, .jugador-box.yo-mismo {
+    background-color: rgba(255, 255, 255, 0) !important;
+    box-shadow: none !important;
+    min-width: 200px !important;
+    max-width: 270px !important;
+
+    height: 20% !important;
+    padding: 16px 10px 12px 10px !important;
+    font-size: 1em !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    position: relative !important;
-    box-shadow: 0 2px 8px #2224 !important;
+    position: relative;
   }
-
-  .jugador-pos-1, .jugador-pos-2, .jugador-pos-3, .jugador-pos-4 {
-    min-width: 50px !important;
-    max-width: 90px !important;
-    width: 22vw !important;
-    left: unset !important;
-    right: unset !important;
+  .apuesta-pequena{
+    color: black !important;
   }
-  .jugador-pos-1 { left: 2% !important; bottom: 38% !important; }
-  .jugador-pos-2 { left: 50% !important; bottom: 2% !important; transform: translateX(-50%) !important; }
-  .jugador-pos-3 { right: 2% !important; bottom: 38% !important; }
-  .jugador-pos-4 { left: 50% !important; top: 2% !important; transform: translateX(-50%) !important; }
-
   .name, .jugador-nombre {
     width: 100% !important;
     text-align: center !important;
-    background: #fff !important;
-    font-size: 0.95em !important;
+    font-family: "Lobster", cursive, Arial, sans-serif !important;
+    font-size: 1.2em !important;
     font-weight: bold !important;
     color: #222 !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 8px !important;
     border-radius: 6px !important;
     margin-top: 0 !important;
     position: static !important;
     display: block !important;
   }
-
   .jugador-cartas {
+    
     display: flex !important;
     flex-direction: row !important;
     justify-content: center !important;
@@ -1160,280 +1149,50 @@ body {
     top: unset !important;
     left: unset !important;
     transform: none !important;
-    gap: 1px !important;
   }
-
-  .cartas {
-    margin: 0 !important;
+  .cartas{
+    margin: 0 0 0 23px;
     width: 100% !important;
-    position: static !important;
+    position: static !important; // Quita cualquier position heredado
   }
-
   .cards, .cardsCr {
-    width: 16px !important;
-    height: 24px !important;
-    font-size: 0.7rem !important;
-    margin: 0 1px 1px 0 !important;
-  }
-
-  .img-Crupier,
-  .img-Player {
-    display: none !important;
-  }
-
-  .apuesta-encima, .apuesta-total {
-    font-size: 0.7em !important;
-    padding: 1px 2px !important;
-    min-width: 10px !important;
-  }
-
-  .contenedor-apuesta {
-    min-width: 40px !important;
-    padding: 2px 2px !important;
-    font-size: 0.7em !important;
-    border-radius: 8px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-  }
-
-  .jugador-botones button,
-  .apuesta-botones button {
-    padding: 2px 4px !important;
-    font-size: 0.7em !important;
-    min-width: 20px !important;
-    border-radius: 3px !important;
-  }
-
-  .balance-usuario,
-  .total-apuestas-usuario {
-    font-size: 0.7em !important;
-    padding: 2px 4px !important;
-    right: 2px !important;
-    top: 2px !important;
-    border-radius: 6px !important;
-  }
-
-  #chat-container {
-    display: none !important;
-  }
-
-  #timerDisplay {
-    font-size: 0.7em !important;
-    padding: 2px 4px !important;
-    top: 2% !important;
-    right: 2% !important;
-    border-radius: 4px !important;
-  }
-
-  #mensaje, .mensaje, #notificacionCentrada, .notificacion-centrada {
-    font-size: 0.8em !important;
-    padding: 6px 8px !important;
-    min-width: 40px !important;
-    max-width: 98vw !important;
-    border-radius: 6px !important;
-  }
-}
-
-@media screen and (orientation: landscape) and (max-width: 900px) {
-  html, body {
-    font-size: 10px !important;
-    overflow-x: hidden !important;
-    overflow-y: hidden !important;
-    background: #fffde7 !important;
-    height: 100vh !important;
-    width: 100vw !important;
-    min-height: 100vh !important;
-    max-height: 100vh !important;
-  }
-
-  nav, .navbar, #navbar, .navigation {
-    display: none !important;
-  }
-
-  .mesa {
-    width: 100vw !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
-    max-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 24px !important;
-    box-sizing: border-box;
-    position: relative !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-  }
-
-d  // Crupier más abajo en el centro de la mesa
-  .Crupier {
-    position: absolute !important;
-    top: 80px !important; // Antes estaba en 32px, ahora más abajo
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: 60vw !important;
-    min-width: 100px !important;
-    max-width: 260px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    z-index: 10 !important;
-  }
-
-  // Jugador abajo centrado, más pequeño y más arriba
-  .jugador-pos-1 {
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    right: auto !important;
-    top: auto !important;
-    min-width: 100px !important;
-    max-width: 260px !important;
-    width: 60vw !important;
-    bottom: 90px !important;
-    z-index: 10 !important;
-  }
-  .jugador-pos-2, .jugador-pos-3, .jugador-pos-4 {
-    display: none !important;
-  }
-
-  .jugador-box, .jugador-box.yo-mismo {
-    min-width: 100px !important;
-    max-width: 260px !important;
-    width: 60vw !important;
-    padding: 6px 6px 6px 6px !important;
-    font-size: 0.95em !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    box-shadow: 0 2px 8px #2224 !important;
-    position: static !important;
-    margin: 0 auto !important;
-    background: rgba(255,255,255,0.97);
-    border-radius: 18px;
-  }
-
-  // Puntos del jugador DENTRO del contenedor, más arriba
-  .jugador-box .puntos {
-    position: static !important;
-    margin: 0 0 10px 0 !important; // Cambia el margen para que quede más arriba
-    display: block !important;
-    font-size: 1.1em !important;
-    background: #fffde7 !important;
-    border-radius: 6px !important;
-    padding: 4px 12px !important;
-    box-shadow: 0 2px 8px #0002 !important;
-    color: #222 !important;
-    width: auto !important;
-    left: unset !important;
-    bottom: unset !important;
-    top: unset !important;
-    right: unset !important;
-    z-index: 1 !important;
-    align-self: flex-start !important; // Opcional: alinear a la izquierda del contenedor
-  }
-
-  // Dinero y apuestas arriba derecha
-  .balance-usuario {
-    position: fixed !important;
-    top: 18px !important;
-    right: 18px !important;
-    font-size: 1em !important;
-    padding: 6px 12px !important;
-    border-radius: 10px !important;
-    z-index: 100 !important;
-  }
-  .total-apuestas-usuario {
-    position: fixed !important;
-    top: 70px !important;
-    right: 18px !important;
-    font-size: 0.9em !important;
-    padding: 4px 10px !important;
-    border-radius: 8px !important;
-    z-index: 100 !important;
-  }
-
-  // Botones alineados a la izquierda dentro del jugador-box
-  .jugador-botones {
-    justify-content: flex-start !important;
-    margin-left: 0 !important;
-    margin-right: auto !important;
-    width: 100% !important;
-  }
-  .jugador-botones button,
-  .apuesta-botones button {
-    padding: 6px 10px !important;
-    font-size: 1em !important;
-    min-width: 80px !important;
-    border-radius: 6px !important;
-  }
-
-  .jugador-cartas {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: center !important;
-    align-items: center !important;
-    width: 100% !important;
-    margin: 0 !important;
-    position: static !important;
-    gap: 4px !important;
-  }
-
-  .cartas {
-    margin: 0 !important;
-    width: 100% !important;
-    position: static !important;
-  }
-
-  .cards, .cardsCr {
-    width: 32px !important;
+    width: 34px !important;
     height: 48px !important;
     font-size: 1rem !important;
-    margin: 0 2px 2px 0 !important;
   }
-
   .img-Crupier,
   .img-Player {
     display: none !important;
   }
-
   .apuesta-encima, .apuesta-total {
-    font-size: 0.9em !important;
+    font-size: 0.92em !important;
     padding: 2px 6px !important;
-    min-width: 24px !important;
+    min-width: 32px !important;
   }
-
   .contenedor-apuesta {
-    min-width: 80px !important;
-    padding: 4px 8px !important;
-    font-size: 0.9em !important;
-    border-radius: 10px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    position: absolute !important;
-    bottom: 60px !important;
+    min-width: 140px !important;
+    padding: 6px 8px !important;
+    font-size: 0.92em !important;
   }
-
+  .jugador-botones button,
+  .apuesta-botones button {
+    padding: 5px 8px !important;
+    font-size: 0.92em !important;
+    min-width: 70px !important;
+  }
+  .balance-usuario,
+  .total-apuestas-usuario {
+    font-size: 0.95em !important;
+    padding: 5px 10px !important;
+    right: 8px !important;
+  }
   #chat-container {
     display: none !important;
   }
 
-  #timerDisplay {
-    font-size: 0.9em !important;
-    padding: 4px 8px !important;
-    top: 4% !important;
-    right: 4% !important;
-    border-radius: 6px !important;
-  }
-
-  #mensaje, .mensaje, #notificacionCentrada, .notificacion-centrada {
-    font-size: 1em !important;
-    padding: 10px 12px !important;
-    min-width: 120px !important;
-    max-width: 96vw !important;
-    border-radius: 10px !important;
+  .puntos{
+    background-color: transparent !important;
+    box-shadow: none !important;
   }
 }
+
