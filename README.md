@@ -1,6 +1,6 @@
 ### Proyecto-DAW-2024-2025
 # ♠️ BlackJack ♦️
-#Instrucciones para arrancar el proyecto:
+# Instrucciones para arrancar el proyecto:
 Para poder arrancar el proyecto es necesario tener docker instalado
 Seleccionar en github la rama de pro y descargar los archivos
 Descomprimir archivos en una carpeta y con una terminal posicionada en la carpeta ejecutar
