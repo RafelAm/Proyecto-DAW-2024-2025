@@ -536,7 +536,7 @@ body {
     }
 
     .jugador-box.jugador-en-turno {
-        box-shadow: 0 0 32px 8px #ffd600, 0 4px 24px #2228 !important; /* Amarillo */
+        box-shadow: 0 0 32px 8px #ffd600, 0 4px 24px #2228; /* Amarillo */
         /* Para rojo usa: box-shadow: 0 0 32px 8px #ff5252, 0 4px 24px #2228 !important; */
         transition: box-shadow 0.2s;
     }
@@ -671,7 +671,6 @@ body {
     .icono-boton-ficha {
         width: 48px;
         height: 48px;
-        vertical-align: middle;
         pointer-events: none;
         display: block;
     }
@@ -1103,9 +1102,14 @@ body {
 .jugador-box{
     width: 100% !important;
 }
-.jugador-en-turno{
-    box-shadow: none !important;
-}
+  .jugador-box.jugador-en-turno {
+    box-shadow: none !important; // Quita el borde amarillo en móvil
+    border: none !important;
+  }
+  .jugador-box.jugador-en-turno .jugador-nombre {
+    color: #ff0000 !important; // Amarillo para el nombre del jugador en turno
+    text-shadow: 0 0 6px #fffde7, 0 0 2px #ffd600;
+  }
   .jugador-box, .jugador-box.yo-mismo {
     background-color: rgba(255, 255, 255, 0) !important;
     box-shadow: none !important;
@@ -1193,6 +1197,9 @@ body {
   .puntos{
     background-color: transparent !important;
     box-shadow: none !important;
+    top: 73% !important;
+    left: 5% !important;
+    padding: 0 !important;
   }
 }
 
